@@ -197,9 +197,15 @@ If you find this project interesting and want to support its development, consid
 
 [Support development on Ko-fi](https://ko-fi.com/jcicada)
 
-## ⭐ Star History
+## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=JamesCicada/GTAVI-Recomp&type=date&legend=top-left)](https://star-history.com/#JamesCicada/GTAVI-Recomp&Date)
+<a href="https://www.star-history.com/?type=date&repos=JamesCicada%2FGTAVI-Recomp">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=JamesCicada/GTAVI-Recomp&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=JamesCicada/GTAVI-Recomp&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=JamesCicada/GTAVI-Recomp&type=date&legend=top-left" />
+ </picture>
+</a>
 
 ## License
 
