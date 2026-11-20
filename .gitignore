@@ -13,6 +13,18 @@ cmake_install.cmake
 CTestTestfile.cmake
 Testing/
 
+# Visual Studio generator output. Generating into the source tree is always a
+# mistake; these belong in the build directory. Ignored everywhere so a stray
+# in-source configure can never be committed.
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.dir/
+/generated/
+*.VC.db
+*.VC.VC.opendb
+
 # Compiled objects and binaries
 *.o
 *.obj

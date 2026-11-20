@@ -11,8 +11,21 @@ only the C++ standard library.
 
 ## Windows
 
-The compiler is not on `PATH` by default. Run the commands from a Developer
-PowerShell / Developer Command Prompt, or initialise the environment first:
+The quickest path is the helper script. It finds `vcvars64.bat` with `vswhere`,
+so it works with any Visual Studio edition or the Build Tools, from any shell:
+
+```bat
+scripts\build-windows.bat              :: Release
+scripts\build-windows.bat Debug        :: Debug
+scripts\build-windows.bat Debug --clean
+```
+
+It configures with `-DGTAVI_WARNINGS_AS_ERRORS=ON`, so warnings fail locally the
+same way they do in CI. It leaves the caller's environment unchanged.
+
+To drive the toolchain yourself, note that the compiler is not on `PATH` by
+default. Run the commands from a Developer PowerShell / Developer Command
+Prompt, or initialise the environment first:
 
 ```powershell
 & "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
@@ -88,6 +101,7 @@ src/                portable implementation
 src/platform/       per-OS implementation, selected by CMake only
 tools/probe/        gtavi-probe diagnostic front end
 tests/              unit tests and the minimal test framework
+scripts/            helper build scripts
 docs/               build notes, ADRs, research
 cmake/              shared build configuration
 ```

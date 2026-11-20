@@ -105,6 +105,7 @@ src/                portable implementation
 src/platform/       per-OS implementation, selected by CMake only
 tools/probe/        gtavi-probe diagnostic front end
 tests/              unit tests and the minimal test framework
+scripts/            helper build scripts
 docs/               build notes, ADRs, research
 cmake/              shared build configuration
 ```
@@ -115,6 +116,15 @@ both Windows and Linux.
 ## Building from Source
 
 Requires CMake 3.21+ and a C++20 compiler. No third-party libraries.
+
+On Windows, the helper script locates the Visual Studio toolchain and runs all
+three steps:
+
+```bat
+scripts\build-windows.bat
+```
+
+Otherwise:
 
 ```bash
 cmake --preset debug
