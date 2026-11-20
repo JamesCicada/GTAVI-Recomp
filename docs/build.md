@@ -26,10 +26,11 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Visual Studio's generator also works and does not need `vcvars64.bat`:
+Visual Studio's generator also works and does not need `vcvars64.bat`. Omit
+`-G` to use whichever Visual Studio version is installed:
 
 ```powershell
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+cmake -S . -B build -A x64
 cmake --build build --config Debug
 ctest --test-dir build -C Debug --output-on-failure
 ```

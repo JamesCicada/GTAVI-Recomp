@@ -67,7 +67,7 @@ Prepare the development infrastructure.
 
 - [x] Set up the CMake project structure.
 - [x] Configure Windows development builds. (MSVC 19.51, verified locally)
-- [ ] Configure Linux development builds. (CI job configured, awaiting first run)
+- [x] Configure Linux development builds. (CI: GCC and Clang)
 - [x] Set up automated compilation.
 - [ ] Configure static analysis and formatting. (formatting configured; static analysis pending)
 - [x] Integrate unit testing. (`tests/`, CTest, 53 cases)

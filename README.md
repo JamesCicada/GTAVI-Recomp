@@ -57,7 +57,7 @@ The final architecture will be determined through technical research and feasibi
 | Platform      | Status  |
 | ------------- | ------- |
 | Windows 10/11 | Builds and tests pass on Windows 11 (MSVC) |
-| Linux         | CI job configured for GCC and Clang; awaiting first run |
+| Linux         | Builds and tests pass in CI (GCC, Clang) |
 
 Compatibility will be documented as individual features are implemented and tested.
 
