@@ -1,65 +1,101 @@
 # GTA VI Translation Layer
 
-A cross-platform compatibility and translation layer designed to make Grand Theft Auto VI files and components work natively across Windows and Linux.
+A translation layer that makes the PlayStation 5 build of Grand Theft Auto VI run
+natively on PC, by providing native implementations of the PS5 system libraries
+the game depends on.
 
-The project aims to bridge operating system differences by translating platform-specific file operations, formats, and system interactions into their corresponding native equivalents.
+The approach is library-level translation, in the manner of AnyPS5: the game's own
+executable runs unmodified, and the calls it makes into the PS5 platform are
+intercepted and served by equivalent implementations on the host. Nothing is
+recompiled, and instructions are not emulated one by one.
 
 **Status:** Early development. The build system, core primitives, and diagnostic
-tools exist and are covered by tests. No game components are supported yet, and
+tools exist and are covered by tests. No PS5 libraries are implemented yet, and
 the project makes no compatibility claims.
 
 **Research availability:** Development is limited by what can be researched
 without game files. The project will not work from game content, extracted
-assets, or leaked material, in order to avoid DMCA exposure for contributors and
-the project. Until non-game reference material is obtainable — public
-documentation, published format specifications, or files the rights holder makes
-available for interoperability — Phase 1 and the work that depends on it will be
-slow and may stall. Work that needs none of that material (build system,
-portable primitives, documentation) continues.
+assets, PS5 system files, decryption keys, or leaked material, in order to avoid
+DMCA exposure for contributors and the project. Until non-game reference material
+is obtainable — public platform documentation, library documentation, published
+format specifications, or files the rights holder makes available — Phase 1 and
+the work that depends on it will be slow and may stall. Work that needs none of
+that material (build system, portable primitives, documentation) continues.
 
 ## Overview
 
-The goal is to develop a unified compatibility layer that allows GTA VI components to operate across different operating systems without requiring individual components to be rewritten for each platform.
+The goal is to run the PS5 build of the game on a normal PC without requiring the
+game to be rewritten, patched into a different program, or emulated at the
+hardware level.
 
-Development starts with investigating GTA VI's technical requirements, identifying platform dependencies, and establishing a suitable architecture. The scaffolding those investigations need — a cross-platform build, error and logging primitives, path translation, and diagnostics — is already in place. See [docs/build.md](docs/build.md).
+A PS5 title is an ordinary x86-64 program that expects a specific operating
+system, a specific set of system libraries, and a specific graphics and audio
+stack. The translation layer supplies those expectations on the host:
+
+- the executable is loaded and its imports are resolved against our own
+  implementations instead of Sony's libraries;
+- filesystem access through PS5 mount points is mapped onto host directories;
+- the graphics command stream is translated to a PC graphics API;
+- audio output, input devices, threading, and memory behaviour are provided by
+  host-native backends.
+
+The scaffolding this needs — a cross-platform build, error and logging
+primitives, host path translation, and diagnostics — is already in place. See
+[docs/build.md](docs/build.md).
 
 ## Features & Goals
 
-- **Cross-platform compatibility:** Support Windows and Linux environments.
-- **File translation:** Handle differences in file formats, structures, and filesystem operations.
-- **API translation:** Translate supported platform-specific system calls and interactions.
-- **Native integration:** Interface with the host operating system.
-- **Modular architecture:** Maintain an extensible and maintainable codebase.
-- **Community-driven development:** Welcome contributions from developers, researchers, testers, and AI coding agents.
+- **Library translation:** Native implementations of the PS5 system libraries the
+  game imports, in place of emulation or recompilation.
+- **Unmodified game binary:** Run the shipped executable; avoid patching the game
+  where a faithful library implementation will do.
+- **Filesystem translation:** Map PS5 mount points onto host directories, with
+  the access semantics the game expects.
+- **Graphics translation:** Translate the PS5 graphics command stream to Vulkan or
+  Direct3D 12.
+- **Audio and input:** Provide PS5 audio output and DualSense input on the host.
+- **Host portability:** Support Windows and Linux hosts from one codebase.
+- **Modular architecture:** Keep each translated library independent and
+  testable.
+- **Community-driven development:** Welcome contributions from developers,
+  researchers, testers, and AI coding agents.
 
 ## Architecture
 
-The intended translation layer will sit between GTA VI components and the host operating system, handling platform-specific differences.
+The layer sits between the game and the host operating system. The game talks to
+PS5 libraries; the layer answers with host implementations.
 
 ```text
-             GTA VI Files
-                  |
-                  v
-          Translation Layer
-                  |
-           +------+------+
-           |             |
-           v             v
-        Windows        Linux
-        Native         Native
-        APIs           APIs
+                 PS5 game build
+        (executable, data, mount points)
+                       |
+                       v
+               Translation Layer
+        library dispatch + host backends
+          (libSce* -> native code)
+                       |
+            +----------+----------+
+            |                     |
+            v                     v
+       Windows host          Linux host
+    (Win32, DXGI/D3D12,    (POSIX, Vulkan,
+     WASAPI, XInput)        PipeWire, evdev)
 ```
 
-The final architecture will be determined through technical research and feasibility testing.
+Subsystem boundaries, the loader contract, and the dispatch mechanism are defined
+in [ADR 0002](docs/adr/0002-ps5-to-pc-library-translation.md). Individual
+decisions are recorded as ADRs under [docs/adr/](docs/adr/).
 
 ## Platform Support
 
-| Platform      | Status  |
-| ------------- | ------- |
-| Windows 10/11 | Builds and tests pass on Windows 11 (MSVC) |
-| Linux         | Builds and tests pass in CI (GCC, Clang) |
+| Target | Status |
+| --- | --- |
+| Guest: PS5 build | Research phase — no libraries implemented |
+| Host: Windows 10/11 | Builds and tests pass (MSVC) |
+| Host: Linux | Builds and tests pass in CI (GCC, Clang) |
 
-Compatibility will be documented as individual features are implemented and tested.
+Compatibility will be documented as individual libraries are implemented and
+tested. Nothing here is a statement that the game currently runs.
 
 ## Repository Layout
 
@@ -93,13 +129,19 @@ are in [docs/build.md](docs/build.md).
 
 Development is organized into several phases:
 
-1. **Research & Feasibility** — Investigate GTA VI's architecture, dependencies, file formats, and operating system requirements.
-2. **Architecture & Design** — Establish the translation layer architecture and define its individual components.
-3. **Development Environment** — Configure build systems, testing infrastructure, and development tools.
-4. **Core Implementation** — Develop the translation engine, filesystem compatibility, and runtime components.
-5. **Platform Compatibility** — Implement Windows and Linux integrations.
-6. **Graphics, Audio & Input** — Investigate and implement compatibility for major game subsystems.
-7. **Integration & Testing** — Bring components together and investigate compatibility issues.
+1. **Research & Feasibility** — Investigate the PS5 executable format, the
+   libraries the game imports, and the host requirements for each subsystem.
+2. **Architecture & Design** — Define the loader, dispatch mechanism, and
+   subsystem interfaces.
+3. **Development Environment** — Configure build systems, testing infrastructure,
+   and development tools.
+4. **Core Implementation** — Implement the loader, library dispatch, filesystem
+   mapping, and memory and process compatibility.
+5. **Host Platform Compatibility** — Implement Windows and Linux host backends.
+6. **Graphics, Audio & Input** — Translate the graphics command stream, audio
+   output, and controller input.
+7. **Integration & Testing** — Bring components together and investigate
+   compatibility failures.
 8. **Optimization** — Improve performance, stability, and resource usage.
 9. **Release Preparation** — Complete documentation and prepare public releases.
 
@@ -116,8 +158,8 @@ We aim to keep the contribution process straightforward, allowing contributors a
 Before contributing, please read [CONTRIBUTE.md](CONTRIBUTE.md) for development guidelines, contribution instructions, and AI agent policies.
 
 Documentation for the codebase lives in [docs/](docs/README.md), including build
-instructions and the proposed architecture decision on runtime translation
-versus recompilation.
+instructions and the architecture decision that defines the translation
+approach.
 
 ## Community & Updates
 
@@ -129,15 +171,19 @@ Development updates, announcements, and discussions will be shared through our D
 
 ## Disclaimer
 
-This is an independent, community-driven project. It is not affiliated with, endorsed by, or associated with Rockstar Games or Take-Two Interactive.
+This is an independent, community-driven project. It is not affiliated with,
+endorsed by, or associated with Rockstar Games, Take-Two Interactive, or Sony
+Interactive Entertainment.
 
 Grand Theft Auto and GTA VI are trademarks of their respective owners.
+PlayStation is a trademark of Sony Interactive Entertainment.
 
-This project does not distribute GTA VI game files, copyrighted assets, or proprietary source code.
+This project does not distribute GTA VI game files, copyrighted assets,
+proprietary source code, PS5 system files, or decryption keys.
 
 ## Support Development
 
-If you find this project interesting or want to support its development, consider supporting me on Ko-fi.
+If you find this project interesting and want to support its development, consider supporting me on Ko-fi.
 
 [Support development on Ko-fi](https://ko-fi.com/jcicada)
 

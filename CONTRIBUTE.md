@@ -2,7 +2,10 @@
 
 Thank you for your interest in contributing to the GTA VI Translation Layer.
 
-This project aims to build a cross-platform compatibility and translation layer for Grand Theft Auto VI, with a focus on Windows and Linux.
+This project aims to build a translation layer that lets the PlayStation 5 build
+of Grand Theft Auto VI run natively on PC (Windows and Linux) by translating the
+system libraries it depends on. See
+[docs/adr/0002-ps5-to-pc-library-translation.md](docs/adr/0002-ps5-to-pc-library-translation.md).
 
 We welcome contributions from developers, reverse engineers, researchers, testers, documentation writers, and AI-assisted development agents.
 
@@ -51,7 +54,8 @@ Contributors and agents should:
 5. Document assumptions and known limitations.
 6. Avoid introducing unnecessary dependencies.
 7. Ensure that generated code does not violate third-party licenses.
-8. Never include proprietary game files, copyrighted assets, or leaked source code.
+8. Never include proprietary game files, copyrighted assets, PS5 system files,
+   decryption keys, or leaked source code.
 
 **Human review is welcome but does not need to become a bottleneck.** Small, well-scoped contributions with clear explanations and passing tests should be straightforward to merge.
 
@@ -193,6 +197,9 @@ Do not submit:
 - Proprietary GTA VI game files.
 - Leaked Rockstar Games source code.
 - Copyrighted game assets.
+- Sony proprietary code, SDK material, or PS5 system libraries.
+- Decryption keys, entitlements, or licence data.
+- Material obtained by bypassing protection mechanisms.
 - Proprietary third-party code without appropriate licensing.
 - Credentials, private keys, or other sensitive information.
 

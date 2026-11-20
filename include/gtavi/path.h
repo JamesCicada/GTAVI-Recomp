@@ -18,6 +18,11 @@ struct DriveMapping {
 
 /// Bidirectional mapping between Windows drive letters and POSIX mount points.
 ///
+/// These utilities translate **host** paths — the PC the layer runs on — and are
+/// used when the host filesystem differs from what a subsystem expects. Guest
+/// mount points such as `/app0` are a separate subsystem and are not handled
+/// here; see ADR 0002.
+///
 /// Lookup is case-insensitive for drive letters. When several mount points
 /// could match a POSIX path, the longest matching prefix wins.
 class DriveMap {

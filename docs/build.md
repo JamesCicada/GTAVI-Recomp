@@ -92,6 +92,13 @@ docs/               build notes, ADRs, research
 cmake/              shared build configuration
 ```
 
+Planned, created when the corresponding subsystem starts:
+
+```text
+src/loader/         guest executable loading
+src/libraries/      translated PS5 library modules
+```
+
 Only `src/platform/` may contain OS-specific code. Everything else must compile
 on both Windows and Linux, which the CI matrix enforces.
 

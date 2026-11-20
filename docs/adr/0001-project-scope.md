@@ -1,9 +1,14 @@
 # ADR 0001: Project scope — translation layer or recompilation?
 
-- **Status:** Proposed — requires maintainer sign-off
+- **Status:** Superseded by [ADR 0002](0002-ps5-to-pc-library-translation.md)
 - **Date:** 2026-11-20
 - **Deciders:** project maintainer
 - **Related:** `README.md`, `TODO.md`
+
+> **Superseded.** This ADR framed the problem as "a Windows build running on
+> Linux" and did not consider that the input is the **PS5 build**. The maintainer
+> confirmed the target is PS5-to-PC library translation, so the premise below is
+> wrong. The record is kept for context; ADR 0002 is authoritative.
 
 ## Context
 

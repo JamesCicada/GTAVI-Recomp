@@ -3,7 +3,8 @@
 | Document | Purpose |
 | --- | --- |
 | [build.md](build.md) | Prerequisites, build commands, test commands, project layout |
-| [adr/0001-project-scope.md](adr/0001-project-scope.md) | Proposed decision: runtime translation vs. static recompilation |
+| [adr/0002-ps5-to-pc-library-translation.md](adr/0002-ps5-to-pc-library-translation.md) | **Accepted:** PS5-to-PC library translation is the project's approach |
+| [adr/0001-project-scope.md](adr/0001-project-scope.md) | Superseded: earlier translation-vs-recompilation framing |
 | [research/phase-1-research-report.md](research/phase-1-research-report.md) | Phase 1 research template and evidence standard |
 
 ## Conventions
@@ -13,5 +14,5 @@
   a new one.
 - **Research** lives in `research/` and follows the evidence standard defined in
   the Phase 1 report. Confirmed findings must be reproducible.
-- **Nothing in this directory may contain game files, assets, or leaked
-  material.**
+- **Nothing in this directory may contain game files, assets, PS5 system files,
+  decryption keys, or leaked material.**

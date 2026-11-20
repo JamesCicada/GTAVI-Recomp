@@ -5,11 +5,11 @@
 - **Last updated:** 2026-11-20
 
 This document is the deliverable for Phase 1 of `TODO.md`. It records what has
-been *observed* about GTA VI and the host platforms, not what is assumed.
+been *observed* about the PS5 build and the host platforms, not what is assumed.
 
 Every section is filled in the same way. Delete the guidance lines as sections
-are completed; do not delete a section because it is empty — an empty section
-is an honest statement that nothing is known yet.
+are completed; do not delete a section because it is empty — an empty section is
+an honest statement that nothing is known yet.
 
 ## How to use this document
 
@@ -28,8 +28,8 @@ is an honest statement that nothing is known yet.
 | **Unverified** | Mentioned or assumed, but nothing supports it yet. |
 | **Blocked** | Cannot be investigated with the resources available. |
 
-A claim may only move to **Confirmed** when another contributor can reproduce
-it. Per `TODO.md` principle 7, no compatibility claim is made from anything less.
+A claim may only move to **Confirmed** when another contributor can reproduce it.
+Per `TODO.md` principle 7, no compatibility claim is made from anything less.
 
 ### Finding block
 
@@ -43,142 +43,190 @@ Implication:  <what this means for the translation layer>
 
 ## Legal and ethical constraints
 
-- Do not include game files, assets, or decompiled code in this repository or in
-  this report.
+- Do not include game files, assets, PS5 system files, decryption keys, or
+  decompiled code in this repository or in this report.
 - Do not include material from leaks. If a finding can only be supported by
   leaked material, record it as **Blocked** and stop.
+- Do not document or implement ways to bypass encryption, entitlement checks, or
+  DRM. Record only *whether* a mechanism exists and what it requires.
 - Record *behaviour* and *interface facts*, not copyrighted content.
 - Reverse engineering must comply with applicable law; see `CONTRIBUTE.md`.
 
+## Background — reported, not verified
+
+The following is commonly stated about the PS5 platform. None of it has been
+verified by this project, and each item must be promoted to **Confirmed** or
+demoted before it is relied on. It is listed only to give the research a shape.
+
+| Claim | Confidence | Verify by |
+| --- | --- | --- |
+| CPU is x86-64 (AMD Zen 2 class) | Reported | Public specifications |
+| OS is FreeBSD-derived ("Orbis OS") | Reported | Public documentation, observed behaviour |
+| Executables are ELF-derived, loaded from an app container | Reported | Inspecting a legitimately obtained sample |
+| Main module is commonly named `eboot.bin` | Reported | Same |
+| System libraries use a `libSce*` naming convention | Reported | Import table of a sample |
+| Graphics is a low-level command-buffer API (GNM/AGC family) | Reported | Public documentation, samples |
+| Guest mount points include `/app0`, `/data`, `/user` | Reported | Observed file access |
+| Saved data is managed by a dedicated system service | Reported | Public documentation |
+
 ---
 
-## 1. Executable format and binary structure
+## 1. Executable container and module loading
 
-**Question:** What format is the game executable, what is its architecture, and
-how is it loaded?
+**Question:** What container holds the executable, how is it loaded, and what
+does the entry point expect?
 
 | Field | Value |
 | --- | --- |
-| Format | _unknown_ |
+| Container format | _unknown_ |
+| Module format | _unknown_ |
 | Architecture | _unknown_ |
-| Loader | _unknown_ |
-| Observed with | _nothing yet_ |
+| Encryption / signing | _unknown_ |
+| Loader entry contract | _unknown_ |
 
 Findings: none recorded.
 
 Open questions:
 
-- Is the executable packed or protected in a way that prevents inspection?
-- Does it rely on a launcher process, or is it self-contained?
+- Does loading require entitlements or keys the project cannot legitimately
+  obtain? If so, this is **Blocked** and must be stated plainly.
+- Are there secondary modules loaded at runtime, or is everything in one image?
 
-## 2. Dependencies and runtime requirements
+## 2. Imported library surface
 
-**Question:** Which libraries and runtime components must exist for the game to
-start?
+**Question:** Which libraries and symbols does the guest import?
 
-| Dependency | Kind | Required at startup | Evidence |
+This is the single most important table in the project: it defines the work.
+
+| Library | Symbols imported | Subsystem | Priority | Evidence |
+| --- | --- | --- | --- | --- |
+| _none recorded_ | | | | |
+
+Open questions:
+
+- Which imports are optional (loaded lazily by name) and therefore invisible in a
+  static import table?
+- Which imports are only used by features we can initially omit?
+
+## 3. Guest OS behaviour
+
+**Question:** Which OS behaviours does the guest depend on that a PC host does not
+provide identically?
+
+| Behaviour | Guest expectation | Host difference | Impact |
 | --- | --- | --- | --- |
-| _none recorded_ | | | |
+| Virtual memory layout | _unknown_ | _unknown_ | |
+| Executable memory permissions | _unknown_ | _unknown_ | |
+| Thread priorities and affinity | _unknown_ | _unknown_ | |
+| Timing and clocks | _unknown_ | _unknown_ | |
+| Synchronisation primitives | _unknown_ | _unknown_ | |
+| Signal / exception handling | _unknown_ | _unknown_ | |
 
-## 3. Windows-specific APIs and system interactions
+## 4. Filesystem and mount points
 
-**Question:** Which Windows interfaces does the game actually call?
+**Question:** Which mount points does the guest use, and what semantics does it
+expect from them?
 
-Record the category and observed usage. Do not paste disassembly.
-
-| Category | Examples | Observed | Notes |
+| Mount point | Purpose | Read/write | Host mapping candidate |
 | --- | --- | --- | --- |
-| Filesystem | `CreateFileW`, `ReadFile` | _unknown_ | |
-| Memory | `VirtualAlloc`, `VirtualProtect` | _unknown_ | |
-| Threading | `CreateThread`, `WaitForSingleObject` | _unknown_ | |
-| Synchronisation | `CreateEventW`, `CRITICAL_SECTION` | _unknown_ | |
-| Registry | `RegOpenKeyExW` | _unknown_ | |
-| Networking | `WSAStartup`, sockets | _unknown_ | |
-| Graphics | D3D12, DXGI | _unknown_ | |
-| Audio | XAudio2, WASAPI | _unknown_ | |
-| Input | Raw Input, XInput | _unknown_ | |
+| `/app0` | _unknown_ | _unknown_ | Game install directory |
+| `/data` | _unknown_ | _unknown_ | _unknown_ |
+| `/user` | _unknown_ | _unknown_ | User profile directory |
+| _others_ | | | |
 
-## 4. Filesystem access patterns and file formats
+Note: `DriveMap` / `windows_to_posix` in `src/path.cpp` handle **host** paths
+only. Guest mount-point translation is a separate subsystem and is not
+implemented.
 
-**Question:** How does the game address its data, and in what formats?
+Open questions:
+
+- Does the guest rely on case-insensitive lookups, or on exact names?
+- Does it expect POSIX permissions, ownership, or read-only mounts to behave in a
+  particular way?
+
+## 5. Graphics
+
+**Question:** What graphics interface does the guest use, and what is the
+translation target?
 
 | Field | Value |
 | --- | --- |
-| Container formats | _unknown_ |
-| Path conventions | _unknown_ |
-| Case sensitivity expectations | _unknown_ |
-| Long path handling | _unknown_ |
-
-Note: the translation layer's `windows_to_posix` currently assumes drive-letter
-paths and rejects UNC, device, and root-relative paths. Any confirmed use of
-those forms is a direct requirement on `src/path.cpp`.
-
-## 5. Memory management and process behaviour
-
-**Question:** What memory model does the game assume, and which behaviours
-differ between Windows and Linux?
-
-| Behaviour | Windows assumption | Linux difference | Impact |
-| --- | --- | --- | --- |
-| Address space layout | _unknown_ | _unknown_ | |
-| Executable memory | _unknown_ | _unknown_ | |
-| Large pages | _unknown_ | _unknown_ | |
-| Process creation | _unknown_ | _unknown_ | |
-
-## 6. Windows services and runtime components
-
-**Question:** Does the game depend on services, COM components, or redistributables?
+| API family | _unknown_ |
+| Command buffer format | _unknown_ |
+| Shader format | _unknown_ |
+| Synchronisation model | _unknown_ |
+| Translation target | Vulkan or D3D12 (undecided) |
 
 Findings: none recorded.
 
-## 7. Graphics, audio, input, and networking
+Open questions:
 
-**Question:** Which APIs and versions are used, and what are the existing
-translation options?
+- Is a command-stream translation layer sufficient, or is a higher-level
+  interception point available?
+- What is the cost of translating shaders ahead of time versus at load?
 
-| Subsystem | API and version | Translation candidate | Evidence |
-| --- | --- | --- | --- |
-| Graphics | _unknown_ | DXVK / VKD3D-Proton (candidate) | |
-| Audio | _unknown_ | _unknown_ | |
-| Input | _unknown_ | _unknown_ | |
-| Networking | _unknown_ | _unknown_ | |
+## 6. Audio
 
-## 8. DRM, launcher, and anti-cheat
+| Field | Value |
+| --- | --- |
+| Output API | _unknown_ |
+| Channel / format expectations | _unknown_ |
+| 3D audio usage | _unknown_ |
+| Host backends | WASAPI (Windows), PipeWire/ALSA (Linux) — candidates |
+
+## 7. Input
+
+| Field | Value |
+| --- | --- |
+| Input API | _unknown_ |
+| Device features used (haptics, adaptive triggers) | _unknown_ |
+| Host backends | XInput / Raw Input (Windows), evdev (Linux) — candidates |
+
+## 8. Networking and online services
+
+**Question:** Does the guest require network services, and are they in scope?
+
+Findings: none recorded. Note that online services may be out of scope by design;
+record that decision here if so.
+
+## 9. Protection and entitlements
 
 **Question:** Which protection mechanisms exist, and do they block translation?
 
-Findings: none recorded. Record only whether a mechanism exists and what it
-requires; do not document bypass techniques.
+Record only whether a mechanism exists and what it requires. Do not document
+bypass techniques, and do not include keys or entitlement data.
 
-## 9. Compatibility obstacles
+## 10. Compatibility obstacles
 
 | Obstacle | Category | Severity | Blocking | Evidence |
 | --- | --- | --- | --- | --- |
 | _none recorded_ | | | | |
 
-## 10. Windows-to-Linux mapping
+## 11. Library-to-host mapping
 
-| Windows facility | Linux equivalent | Fidelity | Notes |
+One row per library, filled in as designs are decided.
+
+| Guest library | Host implementation | Fidelity | Notes |
 | --- | --- | --- | --- |
-| Drive letters | mount points | Partial | Implemented in `DriveMap` |
-| Path separators | `/` | Full | Implemented |
-| UNC paths | _undecided_ | None | Rejected by `windows_to_posix` |
-| Case-insensitive names | case-sensitive | Low | Requires lookup or overlay |
+| _none recorded_ | | | |
 
-## 11. Feasibility conclusions
+## 12. Feasibility conclusions
 
-- Is file translation alone sufficient for any component? _unknown_
-- Is API translation required? _unknown_
-- Is a standalone runtime feasible? _unknown_
-- Which parts must delegate to existing compatibility technology? _unknown_
+- What is the minimum library set for a first frame? _unknown_
+- Is command-stream graphics translation viable? _unknown_
+- Can guest memory and threading be delegated to the host? _unknown_
+- Which parts must be reimplemented rather than delegated? _unknown_
+- Is the project blocked by entitlements or encryption? _unknown_
 
 ## Risk register
 
 | Risk | Likelihood | Impact | Mitigation | Status |
 | --- | --- | --- | --- | --- |
-| No access to a legitimate installation for inspection | High | High | Keep research scoped to public information; mark rest **Blocked** | Open |
-| Anti-cheat or DRM blocks translation | Unknown | High | Identify early, document, do not bypass | Open |
-| Graphics translation performance is unacceptable | Medium | Medium | Measure before committing to an architecture | Open |
+| No legitimate research material available | High | High | Keep work scoped to portable code; mark rest **Blocked** | Open |
+| Encryption or entitlements block loading | Unknown | High | Establish early; do not bypass | Open |
+| Graphics translation is infeasible or too slow | Medium | High | Prototype the command stream early | Open |
+| Undocumented behaviour is misread, causing subtle bugs | High | Medium | Require reproducible evidence; test per library | Open |
+| Legal exposure from research inputs | Medium | High | Enforce the DMCA-avoidance policy in `CONTRIBUTE.md` | Open |
 
 ## Open questions
 
@@ -189,3 +237,4 @@ requires; do not document bypass techniques.
 | Date | Change | Author |
 | --- | --- | --- |
 | 2026-11-20 | Template created | — |
+| 2026-11-20 | Reworked for PS5-to-PC library translation (ADR 0002) | — |

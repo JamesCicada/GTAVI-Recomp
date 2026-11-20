@@ -1,6 +1,8 @@
 # Project Roadmap
 
-This document tracks the development of the GTA VI Translation Layer, from initial research and technical investigation through implementation, testing, and release.
+This document tracks the development of the GTA VI Translation Layer, from
+initial research and technical investigation through implementation, testing, and
+release.
 
 Tasks will be updated as development progresses.
 
@@ -9,57 +11,59 @@ See [docs/build.md](docs/build.md) for building and running the test suite.
 
 ## Phase 1: Research & Feasibility
 
-Understand GTA VI's technical requirements and determine what is necessary to achieve cross-platform compatibility.
+Understand the PS5 build's requirements and determine what the translation layer
+must provide. See [docs/research/phase-1-research-report.md](docs/research/phase-1-research-report.md)
+for the evidence standard and the report itself.
 
-### Game Architecture Research
+### Guest Architecture Research
 
-- [ ] Research GTA VI's executable format and binary structure.
-- [ ] Investigate the game's dependencies and runtime requirements.
-- [ ] Identify Windows-specific APIs and system interactions.
-- [ ] Research filesystem access patterns and file formats.
-- [ ] Investigate memory management and process behavior.
-- [ ] Identify dependencies on Windows services and runtime components.
-- [ ] Research graphics, audio, input, and networking requirements.
-- [ ] Investigate DRM, launcher, and anti-cheat dependencies where applicable.
+- [ ] Identify the PS5 executable container and module format.
+- [ ] Determine how the entry module is loaded and what the entry point expects.
+- [ ] Enumerate imported libraries and symbols.
+- [ ] Identify lazily loaded libraries that a static import table does not show.
+- [ ] Research guest memory layout and allocation behaviour.
+- [ ] Research threading, scheduling, and synchronisation behaviour.
+- [ ] Research filesystem layout and mount-point semantics.
+- [ ] Research graphics requirements (command buffers, shaders, synchronisation).
+- [ ] Research audio output requirements.
+- [ ] Research input device requirements.
+- [ ] Research networking and online service dependencies.
+- [ ] Investigate protection, encryption, and entitlement requirements.
 - [ ] Identify potential compatibility obstacles.
 
-### Platform Research
+### Host & Translation Research
 
-- [ ] Document Windows-specific functionality required by the game.
-- [ ] Map Windows APIs to their Linux equivalents.
-- [ ] Research Windows NT kernel interfaces and their Linux counterparts.
-- [ ] Investigate differences between Windows and Linux memory models.
-- [ ] Research Windows and Linux executable loading mechanisms.
-- [ ] Investigate DirectX compatibility requirements.
-- [ ] Evaluate existing compatibility projects such as Wine and Proton.
-- [ ] Identify functionality that cannot be directly translated.
+- [ ] Map each imported library to a host implementation strategy.
+- [ ] Review publicly documented behaviour of comparable translation projects for
+      findings. Do not copy code unless its licence permits it.
+- [ ] Identify behaviour that cannot be translated faithfully.
+- [ ] Evaluate graphics translation targets (Vulkan, Direct3D 12).
+- [ ] Evaluate Windows and Linux host capability differences.
 
 ### Technical Feasibility
 
-- [ ] Determine whether file translation alone is sufficient for any supported components.
-- [ ] Evaluate API translation requirements.
-- [ ] Evaluate the feasibility of implementing a standalone compatibility runtime.
-- [ ] Identify components that may require existing compatibility technologies.
+- [ ] Determine the minimum library set required to reach a first frame.
+- [ ] Establish whether loading is possible without prohibited material.
 - [ ] Document technical limitations and risks.
-- [ ] Produce an initial technical research report.
+- [ ] Produce the initial research report.
 
 ## Phase 2: Architecture & Design
 
 Define the project's architecture before implementing the core components.
 
-- [ ] Finalize the project architecture.
-- [ ] Define the translation layer's responsibilities and boundaries.
-- [ ] Establish the Windows-to-Linux compatibility strategy.
-- [ ] Define module interfaces and communication.
-- [ ] Design the filesystem translation subsystem.
-- [ ] Design the API translation subsystem.
-- [ ] Design the runtime and process management subsystem.
-- [ ] Establish memory management strategies.
+- [ ] Finalize the subsystem architecture.
+- [ ] Define the loader interface and entry contract.
+- [ ] Define the library dispatch interface.
+- [ ] Design guest mount-point translation.
+- [ ] Design the graphics translation subsystem.
+- [ ] Design the audio subsystem.
+- [ ] Design the input subsystem.
+- [ ] Design the memory and threading compatibility layer.
 - [x] Define error handling and logging standards. (`gtavi/error.h`, `gtavi/log.h`)
 - [x] Establish cross-platform coding conventions. (`.clang-format`, `.editorconfig`)
 - [x] Select supported C++ standard. (C++20)
 - [x] Configure CMake build system.
-- [ ] Document architectural decisions. (ADR 0001 proposed, not yet accepted)
+- [x] Document architectural decisions. (ADR 0002, accepted)
 
 ## Phase 3: Development Environment
 
@@ -81,7 +85,8 @@ Implement the foundational translation layer.
 
 ### Core Runtime
 
-- [ ] Implement the translation engine.
+- [ ] Implement the loader.
+- [ ] Implement import resolution and the dispatch table.
 - [ ] Implement module initialization and shutdown.
 - [ ] Implement configuration management.
 - [x] Implement structured logging. (`gtavi/log.h`)
@@ -90,9 +95,10 @@ Implement the foundational translation layer.
 
 ### Filesystem
 
-- [ ] Implement filesystem abstraction.
-- [x] Implement Windows path translation. (`gtavi/path.h`, separator normalisation)
-- [x] Handle drive letters and Linux mount points. (`DriveMap`, C: -> /mnt/c)
+- [ ] Implement the guest filesystem abstraction.
+- [ ] Implement guest mount-point mapping (`/app0`, `/data`, `/user`, ...).
+- [x] Implement host path translation. (`gtavi/path.h`, host-side only)
+- [x] Handle host drive letters and mount points. (`DriveMap`, C: -> /mnt/c)
 - [ ] Implement file access compatibility.
 - [ ] Implement directory and metadata handling.
 - [ ] Handle permissions and access control differences.
@@ -101,65 +107,66 @@ Implement the foundational translation layer.
 ### Memory & Processes
 
 - [ ] Research and implement required memory compatibility mechanisms.
-- [ ] Investigate virtual memory behavior differences.
-- [ ] Implement process management interfaces.
-- [ ] Handle thread creation and synchronization.
+- [ ] Investigate virtual memory behaviour differences.
+- [ ] Implement process and thread management interfaces.
+- [ ] Handle thread creation and synchronisation.
 - [ ] Implement required runtime compatibility mechanisms.
 
-## Phase 5: Platform Compatibility
+### Translated Libraries
 
-Implement platform-specific integrations.
+- [ ] Implement the library module template and registration.
+- [ ] Implement the highest-priority libraries from the import table.
+- [ ] Add per-library tests.
+
+## Phase 5: Host Platform Compatibility
+
+Implement host-specific integrations and the dispatch mechanism.
 
 ### Windows
 
-- [ ] Implement Windows platform detection.
-- [ ] Implement Windows-specific interfaces.
-- [ ] Establish Windows build and testing pipeline.
-- [ ] Verify behavior against native Windows APIs.
+- [x] Implement Windows platform detection. (`gtavi/platform.h`)
+- [ ] Implement Windows-specific host interfaces.
+- [x] Establish Windows build and testing pipeline. (CI: MSVC)
+- [ ] Verify behaviour against native Windows APIs.
 
 ### Linux
 
-- [ ] Implement Linux platform detection.
-- [ ] Implement POSIX compatibility interfaces.
+- [x] Implement Linux platform detection. (`gtavi/platform.h`)
+- [ ] Implement POSIX host interfaces.
 - [ ] Implement Linux-specific system integrations.
-- [ ] Establish Linux build and testing pipeline.
-- [ ] Verify behavior against native Linux interfaces.
+- [x] Establish Linux build and testing pipeline. (CI: GCC, Clang)
+- [ ] Verify behaviour against native Linux interfaces.
 
-### API Translation
+### Library Dispatch
 
-- [ ] Identify required Windows API functions.
-- [ ] Implement API compatibility mappings.
-- [ ] Handle unsupported API calls.
-- [ ] Implement error-code translation.
-- [ ] Implement synchronization compatibility.
-- [ ] Test API behavior against reference implementations.
+- [ ] Implement symbol resolution with clear errors for missing imports.
+- [ ] Implement stub reporting for unimplemented symbols.
+- [ ] Test dispatch against a table-driven harness.
 
 ## Phase 6: Graphics, Audio & Input
 
-Investigate and implement compatibility for the game's major subsystems.
+Implement the guest's major subsystems.
 
 ### Graphics
 
-- [ ] Identify the graphics APIs and versions required.
-- [ ] Evaluate DirectX compatibility options.
-- [ ] Investigate Vulkan integration.
-- [ ] Evaluate existing translation technologies.
-- [ ] Implement required graphics compatibility interfaces.
+- [ ] Identify the command buffer and shader formats.
+- [ ] Prototype command-stream translation.
+- [ ] Evaluate translation targets (Vulkan, Direct3D 12).
+- [ ] Implement the graphics interface.
 - [ ] Test rendering correctness.
 - [ ] Investigate performance overhead.
 
 ### Audio
 
-- [ ] Identify audio APIs and dependencies.
-- [ ] Implement required audio compatibility.
-- [ ] Test audio output and device handling.
+- [ ] Identify audio output requirements.
+- [ ] Implement audio output for Windows and Linux hosts.
+- [ ] Test device handling and format conversion.
 
 ### Input
 
-- [ ] Investigate keyboard and mouse input requirements.
-- [ ] Investigate controller compatibility.
-- [ ] Implement input translation where required.
-- [ ] Test input behavior.
+- [ ] Implement controller input.
+- [ ] Implement haptics and adaptive triggers where feasible.
+- [ ] Test input behaviour.
 
 ## Phase 7: Integration & Compatibility
 
@@ -168,10 +175,9 @@ Bring the individual components together.
 - [ ] Integrate the translation subsystems.
 - [ ] Implement runtime initialization.
 - [ ] Implement dependency detection.
-- [ ] Implement compatibility configuration.
 - [ ] Establish a game installation detection mechanism.
 - [ ] Implement diagnostic reporting.
-- [ ] Test individual game components.
+- [ ] Test individual subsystems against the guest.
 - [ ] Test game startup.
 - [ ] Investigate and resolve compatibility failures.
 - [ ] Document known limitations.
@@ -214,7 +220,7 @@ Continue improving compatibility and supporting contributors.
 
 - [ ] Collect community bug reports.
 - [ ] Investigate compatibility reports.
-- [ ] Expand platform support.
+- [ ] Expand library coverage.
 - [ ] Improve hardware compatibility.
 - [ ] Address performance issues.
 - [ ] Expand automated testing.
@@ -232,5 +238,7 @@ Continue improving compatibility and supporting contributors.
 5. Prefer existing, well-tested compatibility technologies where appropriate.
 6. Document technical decisions and implementation limitations.
 7. Never claim compatibility without reproducible testing.
+8. Never bypass protection mechanisms. If running the guest requires material the
+   project cannot legitimately obtain, document the limitation instead.
 
 **Note:** This roadmap is a development plan, not a statement that every listed capability is currently feasible or implemented. Tasks may be revised as research reveals the actual requirements.
