@@ -1,0 +1,15 @@
+// Generated from include/gtavi/version.h.in by CMake. Do not edit the build copy.
+#pragma once
+
+#include <string_view>
+
+namespace gtavi {
+
+inline constexpr int version_major = @PROJECT_VERSION_MAJOR@;
+inline constexpr int version_minor = @PROJECT_VERSION_MINOR@;
+inline constexpr int version_patch = @PROJECT_VERSION_PATCH@;
+
+/// Human readable version, for example "0.1.0".
+inline constexpr std::string_view version_string = "@PROJECT_VERSION@";
+
+}  // namespace gtavi

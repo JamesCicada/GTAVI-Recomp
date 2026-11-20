@@ -1,0 +1,110 @@
+# Building and testing
+
+## Requirements
+
+- CMake 3.21 or newer
+- A C++20 compiler: MSVC 19.3x+, GCC 11+, or Clang 14+
+- Ninja (recommended; used by the presets) or any generator CMake supports
+
+No third-party libraries are required. The core library and the test suite use
+only the C++ standard library.
+
+## Windows
+
+The compiler is not on `PATH` by default. Run the commands from a Developer
+PowerShell / Developer Command Prompt, or initialise the environment first:
+
+```powershell
+& "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+```
+
+Then:
+
+```powershell
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+Visual Studio's generator also works and does not need `vcvars64.bat`:
+
+```powershell
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+cmake --build build --config Debug
+ctest --test-dir build -C Debug --output-on-failure
+```
+
+## Linux
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+## Presets
+
+`CMakePresets.json` defines `debug`, `release`, and `ci`:
+
+```bash
+cmake --preset debug
+cmake --build --preset debug
+ctest --preset debug
+```
+
+The `ci` preset enables `-DGTAVI_WARNINGS_AS_ERRORS=ON`, matching the workflow in
+`.github/workflows/ci.yml`. Builds must be warning-free with that setting.
+
+## Options
+
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `GTAVI_BUILD_TESTS` | `ON` | Build the unit test suite |
+| `GTAVI_BUILD_TOOLS` | `ON` | Build `gtavi-probe` |
+| `GTAVI_WARNINGS_AS_ERRORS` | `OFF` | Treat warnings as errors |
+
+## Running the diagnostic tool
+
+`gtavi-probe` prints host information and exercises path translation:
+
+```console
+$ gtavi-probe --to-posix "C:\Games\GTA VI\data" --to-windows /mnt/c/Games
+gtavi-probe 0.1.0
+platform:     windows
+os version:   10.0.26200
+architecture: x86_64
+C:\Games\GTA VI\data -> /mnt/c/Games/GTA VI/data
+/mnt/c/Games -> C:\Games
+```
+
+Include its output when reporting platform-specific bugs.
+
+## Layout
+
+```text
+include/gtavi/      public headers
+src/                portable implementation
+src/platform/       per-OS implementation, selected by CMake only
+tools/probe/        gtavi-probe diagnostic front end
+tests/              unit tests and the minimal test framework
+docs/               build notes, ADRs, research
+cmake/              shared build configuration
+```
+
+Only `src/platform/` may contain OS-specific code. Everything else must compile
+on both Windows and Linux, which the CI matrix enforces.
+
+## Adding a test
+
+Tests use a small in-repo framework, so no dependency is needed:
+
+```cpp
+#include "test_framework.h"
+
+GTAVI_TEST(descriptive_name) {
+    CHECK_TRUE(some_condition);
+    CHECK_EQ(actual, expected);
+}
+```
+
+Add the file to `tests/CMakeLists.txt`; registration is automatic.

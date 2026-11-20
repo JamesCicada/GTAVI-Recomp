@@ -4,6 +4,9 @@ This document tracks the development of the GTA VI Translation Layer, from initi
 
 Tasks will be updated as development progresses.
 
+An item is checked only when the implementation is committed and its tests pass.
+See [docs/build.md](docs/build.md) for building and running the test suite.
+
 ## Phase 1: Research & Feasibility
 
 Understand GTA VI's technical requirements and determine what is necessary to achieve cross-platform compatibility.
@@ -52,25 +55,25 @@ Define the project's architecture before implementing the core components.
 - [ ] Design the API translation subsystem.
 - [ ] Design the runtime and process management subsystem.
 - [ ] Establish memory management strategies.
-- [ ] Define error handling and logging standards.
-- [ ] Establish cross-platform coding conventions.
-- [ ] Select supported C++ standard.
-- [ ] Configure CMake build system.
-- [ ] Document architectural decisions.
+- [x] Define error handling and logging standards. (`gtavi/error.h`, `gtavi/log.h`)
+- [x] Establish cross-platform coding conventions. (`.clang-format`, `.editorconfig`)
+- [x] Select supported C++ standard. (C++20)
+- [x] Configure CMake build system.
+- [ ] Document architectural decisions. (ADR 0001 proposed, not yet accepted)
 
 ## Phase 3: Development Environment
 
 Prepare the development infrastructure.
 
-- [ ] Set up the CMake project structure.
-- [ ] Configure Windows development builds.
-- [ ] Configure Linux development builds.
-- [ ] Set up automated compilation.
-- [ ] Configure static analysis and formatting.
-- [ ] Integrate unit testing.
-- [ ] Configure CI workflows.
-- [ ] Establish debugging and diagnostic tooling.
-- [ ] Create development documentation.
+- [x] Set up the CMake project structure.
+- [x] Configure Windows development builds. (MSVC 19.51, verified locally)
+- [ ] Configure Linux development builds. (CI job configured, awaiting first run)
+- [x] Set up automated compilation.
+- [ ] Configure static analysis and formatting. (formatting configured; static analysis pending)
+- [x] Integrate unit testing. (`tests/`, CTest, 53 cases)
+- [x] Configure CI workflows. (`.github/workflows/ci.yml`)
+- [x] Establish debugging and diagnostic tooling. (`gtavi-probe`)
+- [x] Create development documentation. (`docs/build.md`)
 
 ## Phase 4: Core Implementation
 
@@ -81,15 +84,15 @@ Implement the foundational translation layer.
 - [ ] Implement the translation engine.
 - [ ] Implement module initialization and shutdown.
 - [ ] Implement configuration management.
-- [ ] Implement structured logging.
-- [ ] Implement error handling.
-- [ ] Implement runtime diagnostics.
+- [x] Implement structured logging. (`gtavi/log.h`)
+- [x] Implement error handling. (`gtavi/error.h`)
+- [x] Implement runtime diagnostics. (`gtavi-probe`)
 
 ### Filesystem
 
 - [ ] Implement filesystem abstraction.
-- [ ] Implement Windows path translation.
-- [ ] Handle drive letters and Linux mount points.
+- [x] Implement Windows path translation. (`gtavi/path.h`, separator normalisation)
+- [x] Handle drive letters and Linux mount points. (`DriveMap`, C: -> /mnt/c)
 - [ ] Implement file access compatibility.
 - [ ] Implement directory and metadata handling.
 - [ ] Handle permissions and access control differences.

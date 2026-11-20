@@ -4,13 +4,24 @@ A cross-platform compatibility and translation layer designed to make Grand Thef
 
 The project aims to bridge operating system differences by translating platform-specific file operations, formats, and system interactions into their corresponding native equivalents.
 
-**Status:** Work in Progress
+**Status:** Early development. The build system, core primitives, and diagnostic
+tools exist and are covered by tests. No game components are supported yet, and
+the project makes no compatibility claims.
+
+**Research availability:** Development is limited by what can be researched
+without game files. The project will not work from game content, extracted
+assets, or leaked material, in order to avoid DMCA exposure for contributors and
+the project. Until non-game reference material is obtainable — public
+documentation, published format specifications, or files the rights holder makes
+available for interoperability — Phase 1 and the work that depends on it will be
+slow and may stall. Work that needs none of that material (build system,
+portable primitives, documentation) continues.
 
 ## Overview
 
 The goal is to develop a unified compatibility layer that allows GTA VI components to operate across different operating systems without requiring individual components to be rewritten for each platform.
 
-This project is currently in its research and planning stages. Development will begin with investigating GTA VI's technical requirements, identifying platform dependencies, and establishing a suitable architecture.
+Development starts with investigating GTA VI's technical requirements, identifying platform dependencies, and establishing a suitable architecture. The scaffolding those investigations need — a cross-platform build, error and logging primitives, path translation, and diagnostics — is already in place. See [docs/build.md](docs/build.md).
 
 ## Features & Goals
 
@@ -45,10 +56,38 @@ The final architecture will be determined through technical research and feasibi
 
 | Platform      | Status  |
 | ------------- | ------- |
-| Windows 10/11 | Planned |
-| Linux         | Planned |
+| Windows 10/11 | Builds and tests pass on Windows 11 (MSVC) |
+| Linux         | CI job configured for GCC and Clang; awaiting first run |
 
 Compatibility will be documented as individual features are implemented and tested.
+
+## Repository Layout
+
+```text
+include/gtavi/      public headers
+src/                portable implementation
+src/platform/       per-OS implementation, selected by CMake only
+tools/probe/        gtavi-probe diagnostic front end
+tests/              unit tests and the minimal test framework
+docs/               build notes, ADRs, research
+cmake/              shared build configuration
+```
+
+Only `src/platform/` may contain OS-specific code. Everything else compiles on
+both Windows and Linux.
+
+## Building from Source
+
+Requires CMake 3.21+ and a C++20 compiler. No third-party libraries.
+
+```bash
+cmake --preset debug
+cmake --build --preset debug
+ctest --preset debug
+```
+
+Full instructions, including Windows environment setup and the diagnostic tool,
+are in [docs/build.md](docs/build.md).
 
 ## Development Roadmap
 
@@ -75,6 +114,10 @@ AI-assisted development is explicitly permitted. Contributors can use tools such
 We aim to keep the contribution process straightforward, allowing contributors and agents to research, implement, test, and submit changes without unnecessary bureaucracy.
 
 Before contributing, please read [CONTRIBUTE.md](CONTRIBUTE.md) for development guidelines, contribution instructions, and AI agent policies.
+
+Documentation for the codebase lives in [docs/](docs/README.md), including build
+instructions and the proposed architecture decision on runtime translation
+versus recompilation.
 
 ## Community & Updates
 

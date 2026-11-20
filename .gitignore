@@ -1,0 +1,48 @@
+# Build output
+/build/
+/out/
+/install/
+cmake-build-*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+compile_commands.json
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+
+# Compiled objects and binaries
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.idb
+*.exp
+*.map
+
+# IDE and editor state
+.vs/
+.vscode/
+.idea/
+.cache/
+*.user
+*.suo
+*.swp
+*~
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local scratch space for research notes that must not be committed
+/scratch/

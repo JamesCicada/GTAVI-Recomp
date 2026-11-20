@@ -64,6 +64,7 @@ Agents working on this repository should:
 - Check existing issues and pull requests to avoid duplicate work.
 - Work on clearly defined tasks.
 - Keep changes focused and avoid unrelated refactoring.
+- Build and run the test suite before submitting (see `docs/build.md`).
 - Report anything that cannot be verified.
 - Provide a concise summary of modifications and testing results.
 
@@ -142,7 +143,10 @@ Large pull requests are welcome when the feature genuinely requires them, but sh
 - Avoid unexplained hardcoded values.
 - Write tests for new functionality where practical.
 
-Formatting and static analysis requirements will be documented as the development environment is established.
+Formatting is defined by `.clang-format`; run `clang-format -i` on the C++ files
+you change. The build enables a strict warning set (see
+`cmake/CompilerWarnings.cmake`) and CI builds with warnings treated as errors.
+Build and test instructions are in [docs/build.md](docs/build.md).
 
 ## Research Contributions
 
