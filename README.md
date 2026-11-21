@@ -209,7 +209,17 @@ If you find this project interesting and want to support its development, consid
 
 ## License
 
-Released under the [MIT License](LICENSE).
+Released under the [GNU General Public License, version 2 only](LICENSE)
+(GPL-2.0-only), the same license as AnyPS5, whose code this project builds on.
 
 The license covers this project's own source code and documentation only. It
 grants no rights to GTA VI, its assets, or any Sony or Rockstar Games material.
+
+## Acknowledgements
+
+This project builds on [AnyPS5](https://github.com/boykopovar/AnyPS5) rather
+than reinventing it. AnyPS5's relinker, shader recompiler, and system-library
+implementations, and the research behind them, are the foundation this project
+uses; it is included as a git submodule under `third_party/AnyPS5` and keeps its
+own copyright and license. Work that is not specific to GTA VI should go
+upstream to AnyPS5.

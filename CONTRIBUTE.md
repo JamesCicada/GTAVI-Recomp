@@ -190,7 +190,7 @@ The objective is to solve problems, not create unnecessary barriers to participa
 
 ## Licensing & Legal Considerations
 
-The project is licensed under the [MIT License](LICENSE). By contributing, you agree that your submissions are licensed under it and must be legally permissible to distribute under it.
+The project is licensed under the [GNU General Public License, version 2 only](LICENSE) (GPL-2.0-only), to match [AnyPS5](https://github.com/boykopovar/AnyPS5), whose code it builds on. Code from projects under licences incompatible with GPL-2.0-only (including GPLv3-only code) must not be added. By contributing, you agree that your submissions are licensed under it and must be legally permissible to distribute under it.
 
 Do not submit:
 
