@@ -1,0 +1,32 @@
+# systemd unit for Cal Hampton. See bot/README.md.
+# Install: sudo cp bot/cal-hampton.service /etc/systemd/system/
+[Unit]
+Description=Cal Hampton, GTAVI-Recomp Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=calbot
+Group=calbot
+WorkingDirectory=/opt/cal-hampton/bot
+# DISCORD_BOT_TOKEN=... (and optionally DISCORD_GUILD_ID=...), readable only by root.
+EnvironmentFile=/etc/cal-hampton.env
+ExecStart=/opt/cal-hampton/venv/bin/python /opt/cal-hampton/bot/cal_hampton.py
+Restart=on-failure
+RestartSec=10
+
+# Hardening: the bot only needs the network.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

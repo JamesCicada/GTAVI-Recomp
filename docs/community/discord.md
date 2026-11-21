@@ -48,6 +48,10 @@ No channel is for sharing or requesting game files, and none should be added.
 | `Contributor` | Anyone with a merged pull request here or upstream in AnyPS5 | None; recognition only |
 | `Updates` | Members who opt in to pings | Pinged on `#announcements` posts |
 
+The bot, **Cal Hampton**, has its own role with only **Manage Roles**, placed
+above `Updates` so `/updates` can give that role out. Its commands and VPS setup
+are in [bot/README.md](../../bot/README.md).
+
 `@everyone` can read every channel, post in the Community and Development
 channels, and join voice. Nobody but maintainers and moderators can mention
 `@everyone` or `@here`.
@@ -97,8 +101,9 @@ ping anyone, whatever a commit message contains.
    python scripts/discord_setup.py --apply --webhooks
    ```
 
-5. Remove the bot from the server, or take away its Administrator role, when
-   done.
+5. Take away the bot's Administrator permission when done. The same bot runs
+   the server's slash commands; see [bot/README.md](../../bot/README.md) for
+   the permissions it keeps.
 
 The script matches roles and channels by name, reuses ones that exist, never
 deletes or renames anything, and posts a message only to a channel that has none

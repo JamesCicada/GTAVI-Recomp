@@ -61,3 +61,6 @@ desktop.ini
 
 # Built progress site (scripts/update_progress.py --site)
 _site/
+
+# Local virtual environment for the Discord bot (bot/README.md)
+.venv-bot/

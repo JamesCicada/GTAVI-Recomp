@@ -144,7 +144,8 @@ third_party/AnyPS5/ AnyPS5, pinned as a git submodule
 docs/               ADRs, research, build notes
 progress/           generated progress charts and AnyPS5 measurements
 site/               the progress page published to GitHub Pages
-scripts/            progress generator and build helpers
+scripts/            progress generator, Discord setup, build helpers
+bot/                Cal Hampton, the Discord bot (/progress, /faq, /updates)
 include/gtavi/      project tooling: public headers
 src/                project tooling: implementation (OS-specific code in src/platform/)
 tools/probe/        gtavi-probe diagnostic front end
