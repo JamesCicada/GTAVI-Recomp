@@ -218,7 +218,9 @@ Join the community to follow development progress, discuss technical research, s
 
 **Discord:** [Join the community](https://discord.gg/RTwXeccCqD)
 
-Development updates, announcements, and discussions will be shared through our Discord server.
+Development updates, announcements, and discussions are shared through our Discord
+server; new commits to `main` are posted there automatically. Its channels, rules
+and FAQ are in [docs/community/discord.md](docs/community/discord.md).
 
 ## Disclaimer
 
