@@ -8,10 +8,19 @@ Slash commands:
     /updates         Give yourself, or remove, the Updates role that is pinged
                      for announcements.
 
+Member events, each switched on by its environment variable:
+    CAL_WELCOME_CHANNEL  greets each new member there with a short message
+    CAL_LOG_CHANNEL      logs joins and leaves there (meant for a staff-only
+                         channel such as #member-log)
+Both need the privileged Server Members intent, which must be switched on in
+the Developer Portal before either variable is set.
+
 Configuration comes from environment variables, never from the repository:
-    DISCORD_BOT_TOKEN   the bot token (required)
-    DISCORD_GUILD_ID    server to register commands in instantly
-                        (default: the project server)
+    DISCORD_BOT_TOKEN    the bot token (required)
+    DISCORD_GUILD_ID     server to register commands in instantly
+                         (default: the project server)
+    CAL_WELCOME_CHANNEL  channel name or ID (unset: no welcome messages)
+    CAL_LOG_CHANNEL      channel name or ID (unset: no join/leave log)
 
 Data is fetched over HTTPS and cached for a few minutes, so the bot needs no
 checkout of the repository and always shows what is on main.
@@ -19,6 +28,7 @@ checkout of the repository and always shows what is on main.
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import os
 import re
@@ -39,7 +49,10 @@ REPO_URL = "https://github.com/JamesCicada/GTAVI-Recomp"
 UPDATES_ROLE = "Updates"
 CACHE_SECONDS = 300
 COLOUR = 0x2F81F7
+JOIN_COLOUR = 0x2EA043
+LEAVE_COLOUR = 0xF85149
 BAR_WIDTH = 16
+NEW_ACCOUNT_DAYS = 7
 
 
 # --------------------------------------------------------------------------
@@ -187,13 +200,67 @@ def progress_embed(data: dict) -> discord.Embed:
     return embed
 
 
+def channel_mention(guild: discord.Guild, name: str) -> str:
+    channel = discord.utils.get(guild.text_channels, name=name)
+    return channel.mention if channel else f"#{name}"
+
+
+def welcome_text(member: discord.Member) -> str:
+    guild = member.guild
+    return (
+        f"Welcome to the city, {member.mention}! 🌴 Read {channel_mention(guild, 'rules')} "
+        f"and {channel_mention(guild, 'faq')}, then come say hi. Use `/progress` to see where the project stands."
+    )
+
+
+def join_embed(member: discord.Member, now: dt.datetime) -> discord.Embed:
+    age = now - member.created_at
+    embed = discord.Embed(
+        title="Member joined",
+        description=f"{member.mention} `{member}`",
+        colour=JOIN_COLOUR,
+        timestamp=now,
+    )
+    embed.add_field(name="Account created", value=discord.utils.format_dt(member.created_at, "R"), inline=True)
+    embed.add_field(name="ID", value=f"`{member.id}`", inline=True)
+    if age < dt.timedelta(days=NEW_ACCOUNT_DAYS):
+        embed.add_field(name="⚠️ New account", value=f"Created less than {NEW_ACCOUNT_DAYS} days ago", inline=False)
+    embed.set_thumbnail(url=member.display_avatar.url)
+    embed.set_footer(text=f"Members: {member.guild.member_count:,}")
+    return embed
+
+
+def leave_embed(user: discord.abc.User, guild: discord.Guild, now: dt.datetime) -> discord.Embed:
+    embed = discord.Embed(
+        title="Member left",
+        description=f"{user.mention} `{user}`",
+        colour=LEAVE_COLOUR,
+        timestamp=now,
+    )
+    if isinstance(user, discord.Member) and user.joined_at:
+        embed.add_field(name="Joined", value=discord.utils.format_dt(user.joined_at, "R"), inline=True)
+    embed.add_field(name="ID", value=f"`{user.id}`", inline=True)
+    if isinstance(user, discord.Member):
+        roles = [r.mention for r in reversed(user.roles) if not r.is_default()]
+        if roles:
+            embed.add_field(name="Roles", value=" ".join(roles)[:1024], inline=False)
+    embed.set_thumbnail(url=user.display_avatar.url)
+    embed.set_footer(text=f"Members: {guild.member_count:,}")
+    return embed
+
+
 # --------------------------------------------------------------------------
 # Bot
 
 
 class CalHampton(discord.Client):
-    def __init__(self, guild_id: int):
-        super().__init__(intents=discord.Intents.default())
+    def __init__(self, guild_id: int, welcome_channel: str | None = None, log_channel: str | None = None):
+        intents = discord.Intents.default()
+        # Join and leave events need the privileged Server Members intent.
+        intents.members = bool(welcome_channel or log_channel)
+        super().__init__(intents=intents)
+        self.welcome_channel = welcome_channel
+        self.log_channel = log_channel
         self.guild = discord.Object(id=guild_id)
         self.tree = app_commands.CommandTree(self)
         self.session: aiohttp.ClientSession | None = None
@@ -215,6 +282,45 @@ class CalHampton(discord.Client):
 
     async def on_ready(self) -> None:
         LOG.info("Logged in as %s", self.user)
+        LOG.info("Welcome messages: %s; join/leave log: %s",
+                 self.welcome_channel or "off", self.log_channel or "off")
+
+    def text_channel(self, guild: discord.Guild, target: str | None) -> discord.TextChannel | None:
+        if not target:
+            return None
+        if target.isdigit():
+            channel = guild.get_channel(int(target))
+            return channel if isinstance(channel, discord.TextChannel) else None
+        return discord.utils.get(guild.text_channels, name=target.lstrip("#"))
+
+    async def post(self, guild: discord.Guild, target: str | None, **kwargs) -> None:
+        channel = self.text_channel(guild, target)
+        if channel is None:
+            if target:
+                LOG.warning("Channel %r not found", target)
+            return
+        try:
+            await channel.send(**kwargs)
+        except discord.HTTPException:
+            LOG.exception("Could not post in #%s", channel.name)
+
+    async def on_member_join(self, member: discord.Member) -> None:
+        if member.guild.id != self.guild.id:
+            return
+        now = discord.utils.utcnow()
+        await self.post(member.guild, self.log_channel, embed=join_embed(member, now),
+                        allowed_mentions=discord.AllowedMentions.none())
+        if not member.bot:
+            await self.post(member.guild, self.welcome_channel, content=welcome_text(member),
+                            allowed_mentions=discord.AllowedMentions(users=[member]))
+
+    async def on_raw_member_remove(self, payload: discord.RawMemberRemoveEvent) -> None:
+        # The raw event fires even when the member was not cached.
+        guild = self.get_guild(payload.guild_id)
+        if guild is None or guild.id != self.guild.id:
+            return
+        await self.post(guild, self.log_channel, embed=leave_embed(payload.user, guild, discord.utils.utcnow()),
+                        allowed_mentions=discord.AllowedMentions.none())
 
 
 def register_commands(bot: CalHampton) -> None:
@@ -302,7 +408,9 @@ def main() -> int:
         print("Set DISCORD_BOT_TOKEN (see bot/README.md).", file=sys.stderr)
         return 1
     guild_id = int(os.environ.get("DISCORD_GUILD_ID", DEFAULT_GUILD))
-    CalHampton(guild_id).run(token, log_handler=None)
+    welcome = os.environ.get("CAL_WELCOME_CHANNEL", "").strip() or None
+    log = os.environ.get("CAL_LOG_CHANNEL", "").strip() or None
+    CalHampton(guild_id, welcome, log).run(token, log_handler=None)
     return 0
 
 

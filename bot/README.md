@@ -14,15 +14,35 @@ The project's Discord bot. It answers three slash commands in the
 [docs/community/discord.md](../docs/community/discord.md) on `main`. Both are
 cached for five minutes, so the bot follows `main` without being redeployed.
 
+## Member events
+
+Two optional features, each switched on by an environment variable in
+`/etc/cal-hampton.env`:
+
+| Variable | What Cal does |
+| --- | --- |
+| `CAL_WELCOME_CHANNEL=general` | Greets each new member there, pinging them, with links to `#rules` and `#faq`. Bots are not greeted. |
+| `CAL_LOG_CHANNEL=member-log` | Logs every join (account age, ID, a warning for accounts under 7 days old) and leave (when they joined, their roles) as embeds that ping nobody. |
+
+Values are a channel name or ID. Either one needs the privileged **Server
+Members Intent** (Developer Portal → **Bot** → **Privileged Gateway Intents**);
+switch it on first, or Discord refuses Cal's connection. With neither set, Cal
+does not ask for the intent.
+
+The hidden `#member-log` channel is created by
+[`scripts/discord_setup.py`](../scripts/discord_setup.py): `@everyone` cannot
+see it, Moderators can read it, and Cal's role can post in it.
+
 ## Discord setup
 
 1. **Permissions.** Cal needs only **Manage Roles**. In Discord, open
    **Server Settings → Roles → Cal Hampton**, turn **Administrator** off and
-   **Manage Roles** on.
+   **Manage Roles** on. (Run the setup script, which needs Administrator,
+   before taking it away.)
 2. **Role order.** In the same list, drag the **Cal Hampton** role above
    **Updates**. A bot can only give out roles below its own.
-3. No privileged gateway intents are needed; leave them off in the Developer
-   Portal.
+3. **Intents.** Only the member events above need a privileged intent
+   (**Server Members**). Leave the others off.
 
 ## Running on a VPS (systemd)
 

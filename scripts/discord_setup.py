@@ -56,6 +56,9 @@ CREATE_PRIVATE_THREADS = 1 << 36
 SEND_MESSAGES_IN_THREADS = 1 << 38
 MODERATE_MEMBERS = 1 << 40
 
+EMBED_LINKS = 1 << 14
+READ_MESSAGE_HISTORY = 1 << 16
+
 READ_ONLY_DENY = SEND_MESSAGES | SEND_MESSAGES_IN_THREADS | CREATE_PUBLIC_THREADS | CREATE_PRIVATE_THREADS
 
 ROLES = [
@@ -66,30 +69,35 @@ ROLES = [
     ("Updates", 0, 0, False, True),
 ]
 
-# category -> [(channel name, type, topic, read_only)]
+# category -> [(channel name, type, topic, access)]
+# access: "open" (everyone posts), "read-only" (everyone reads, only admins and
+# webhooks post), "staff" (hidden; Moderators read, the bot posts).
 LAYOUT = [
     ("Start here", [
-        ("welcome", TEXT, "Welcome to the GTA VI Translation Layer community. Start here.", True),
-        ("rules", TEXT, "Server rules. Rule 1: no game files, keys or piracy, ever.", True),
-        ("faq", TEXT, "Frequently asked questions. Read before asking.", True),
-        ("announcements", TEXT, "Releases and major news.", True),
+        ("welcome", TEXT, "Welcome to the GTA VI Translation Layer community. Start here.", "read-only"),
+        ("rules", TEXT, "Server rules. Rule 1: no game files, keys or piracy, ever.", "read-only"),
+        ("faq", TEXT, "Frequently asked questions. Read before asking.", "read-only"),
+        ("announcements", TEXT, "Releases and major news.", "read-only"),
     ]),
     ("Progress", [
-        ("progress", TEXT, "Commits to main with roadmap and AnyPS5 numbers. https://jamescicada.github.io/GTAVI-Recomp/", True),
+        ("progress", TEXT, "Commits to main with roadmap and AnyPS5 numbers. https://jamescicada.github.io/GTAVI-Recomp/", "read-only"),
     ]),
     ("Community", [
-        ("general", TEXT, "General discussion about the project.", False),
-        ("ideas", TEXT, "Suggestions for the project and the server.", False),
-        ("off-topic", TEXT, "Anything else that follows the rules.", False),
+        ("general", TEXT, "General discussion about the project.", "open"),
+        ("ideas", TEXT, "Suggestions for the project and the server.", "open"),
+        ("off-topic", TEXT, "Anything else that follows the rules.", "open"),
     ]),
     ("Development", [
-        ("research", TEXT, "PS5 platform research from public sources and AnyPS5. No game files.", False),
-        ("anyps5-upstream", TEXT, "Library and shader work going upstream to AnyPS5.", False),
-        ("dev-chat", TEXT, "This repository: docs, tooling, progress, CI.", False),
-        ("build-help", TEXT, "Building this repository and AnyPS5.", False),
+        ("research", TEXT, "PS5 platform research from public sources and AnyPS5. No game files.", "open"),
+        ("anyps5-upstream", TEXT, "Library and shader work going upstream to AnyPS5.", "open"),
+        ("dev-chat", TEXT, "This repository: docs, tooling, progress, CI.", "open"),
+        ("build-help", TEXT, "Building this repository and AnyPS5.", "open"),
     ]),
     ("Voice", [
-        ("General", VOICE, None, False),
+        ("General", VOICE, None, "open"),
+    ]),
+    ("Staff", [
+        ("member-log", TEXT, "Joins and leaves, posted by Cal. Staff only.", "staff"),
     ]),
 ]
 
@@ -254,6 +262,29 @@ def main() -> int:
     else:
         print("  @everyone: already cannot mention @everyone")
 
+    # The bot's own managed role, so staff channels can let it post.
+    bot_role = next((r for r in roles.values() if (r.get("tags") or {}).get("bot_id") == me["id"]), None)
+
+    def channel_overwrites(access: str) -> list[dict]:
+        if access == "read-only":
+            return [{"id": everyone_id, "type": 0, "allow": "0", "deny": str(READ_ONLY_DENY)}]
+        if access == "staff":
+            out = [{"id": everyone_id, "type": 0, "allow": "0", "deny": str(VIEW_CHANNEL)}]
+            moderator = roles.get("Moderator")
+            if moderator:
+                out.append({"id": moderator["id"], "type": 0,
+                            "allow": str(VIEW_CHANNEL | READ_MESSAGE_HISTORY), "deny": "0"})
+            if bot_role:
+                out.append({"id": bot_role["id"], "type": 0,
+                            "allow": str(VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | READ_MESSAGE_HISTORY),
+                            "deny": "0"})
+            else:
+                out.append({"id": me["id"], "type": 1,
+                            "allow": str(VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | READ_MESSAGE_HISTORY),
+                            "deny": "0"})
+            return out
+        return []
+
     # Channels
     channels = api.call("GET", f"/guilds/{args.guild}/channels")
 
@@ -271,9 +302,8 @@ def main() -> int:
                 category = api.call("POST", f"/guilds/{args.guild}/channels",
                                     {"name": category_name, "type": CATEGORY, "position": position})
                 channels.append(category)
-        for name, kind, topic, read_only in children:
-            overwrites = ([{"id": everyone_id, "type": 0, "allow": "0", "deny": str(READ_ONLY_DENY)}]
-                          if read_only else [])
+        for name, kind, topic, access in children:
+            overwrites = channel_overwrites(access)
             existing = find(name, kind)
             label = f"#{name}" if kind == TEXT else name
             if existing:
@@ -287,7 +317,7 @@ def main() -> int:
                     print(f"  {label}: exists in {category_name}")
                 created[name] = existing
                 continue
-            print(f"+ {label} in {category_name}" + (" (read-only)" if read_only else ""))
+            print(f"+ {label} in {category_name}" + (f" ({access})" if access != "open" else ""))
             if apply:
                 body = {"name": name, "type": kind, "parent_id": category["id"],
                         "permission_overwrites": overwrites}

@@ -36,6 +36,7 @@ webhooks post.
 | | `#dev-chat` | This repository: docs, tooling, progress, CI | Everyone |
 | | `#build-help` | Building this repository and AnyPS5 | Everyone |
 | **Voice** | `General` | Voice chat | Everyone |
+| **Staff** | `#member-log` | Joins and leaves, posted by Cal. Hidden from members | Cal (Moderators read) |
 
 No channel is for sharing or requesting game files, and none should be added.
 
