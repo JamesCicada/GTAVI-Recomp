@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="374" viewBox="0 0 820 374" role="img" aria-label="Roadmap: 71 of 138 tasks done, 15 blocked on game files">
+<title>Roadmap: 71 of 138 tasks done, 15 blocked on game files</title>
+<style>
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; font-size: 13px; fill: #1f2328; }
+  .sub { fill: #59636e; font-size: 12px; }
+  .num { font-variant-numeric: tabular-nums; }
+  .strong { font-weight: 600; }
+  .group { font-size: 12px; font-weight: 600; fill: #59636e; letter-spacing: 0.06em; }
+  .track { fill: #d1d9e0; }
+  .done { fill: #1f883d; }
+  .rule { stroke: #d1d9e0; }
+</style>
+<defs>
+  <pattern id="blocked" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <rect width="6" height="6" fill="#cf222e" opacity="0.35"/>
+    <rect width="3" height="6" fill="#cf222e"/>
+  </pattern>
+</defs>
+<text class="" x="0" y="23.5">1. Research &amp; Feasibility</text>
+<clipPath id="bar14"><rect x="330" y="14.0" width="340" height="10" rx="5.0"/></clipPath><g clip-path="url(#bar14)"><rect class="track" x="330" y="14.0" width="340" height="10"/><rect class="done" x="330" y="14.0" width="170.0" height="10"/><rect fill="url(#blocked)" x="561.8" y="14.0" width="108.2" height="10"/></g>
+<text class="num" x="714" y="23.5" text-anchor="end">50%</text>
+<text class="num sub" x="820" y="23.5" text-anchor="end">11 / 22 · 7 blocked</text>
+<text class="" x="0" y="53.5">2. Architecture &amp; Design</text>
+<clipPath id="bar44"><rect x="330" y="44.0" width="340" height="10" rx="5.0"/></clipPath><g clip-path="url(#bar44)"><rect class="track" x="330" y="44.0" width="340" height="10"/><rect class="done" x="330" y="44.0" width="313.8" height="10"/></g>
+<text class="num" x="714" y="53.5" text-anchor="end">92%</text>
+<text class="num sub" x="820" y="53.5" text-anchor="end">12 / 13</text>
+<text class="" x="0" y="83.5">3. Development Environment</text>
+<clipPath id="bar74"><rect x="330" y="74.0" width="340" height="10" rx="5.0"/></clipPath><g clip-path="url(#bar74)"><rect class="track" x="330" y="74.0" width="340" height="10"/><rect class="done" x="330" y="74.0" width="247.3" height="10"/></g>
+<text class="num" x="714" y="83.5" text-anchor="end">73%</text>
+<text class="num sub" x="820" y="83.5" text-anchor="end">8 / 11</text>
+<text class="" x="0" y="113.5">4. Core Implementation</text>
+<clipPath id="bar104"><rect x="330" y="104.0" width="340" height="10" rx="5.0"/></clipPath><g clip-path="url(#bar104)"><rect class="track" x="330" y="104.0" width="340" height="10"/><rect class="done" x="330" y="104.0" width="272.0" height="10"/><rect fill="url(#blocked)" x="642.8" y="104.0" width="27.2" height="10"/></g>
+<text class="num" x="714" y="113.5" text-anchor="end">80%</text>
+<text class="num sub" x="820" y="113.5" text-anchor="end">20 / 25 · 2 blocked</text>
+<text class="" x="0" y="143.5">5. Host Platform Compatibility</text>
+<clipPath id="bar134"><rect x="330" y="134.0" width="340" height="10" rx="5.0"/></clipPath><g clip-path="url(#bar134)"><rect class="track" x="330" y="134.0" width="340" height="10"/><rect class="done" x="330" y="134.0" width="255.0" height="10"/></g>
+<text class="num" x="714" y="143.5" text-anchor="end">75%</text>
+<text class="num sub" x="820" y="143.5" text-anchor="end">9 / 12</text>
+<text class="" x="0" y="173.5">6. Graphics, Audio &amp; Input</text>
+<clipPath id="bar164"><rect x="330" y="164.0" width="340" height="10" rx="5.0"/></clipPath><g clip-path="url(#bar164)"><rect class="track" x="330" y="164.0" width="340" height="10"/><rect class="done" x="330" y="164.0" width="148.8" height="10"/></g>
+<text class="num" x="714" y="173.5" text-anchor="end">44%</text>
+<text class="num sub" x="820" y="173.5" text-anchor="end">7 / 16</text>
+<text class="" x="0" y="203.5">7. Integration &amp; Compatibility</text>
+<clipPath id="bar194"><rect x="330" y="194.0" width="340" height="10" rx="5.0"/></clipPath><g clip-path="url(#bar194)"><rect class="track" x="330" y="194.0" width="340" height="10"/><rect class="done" x="330" y="194.0" width="113.3" height="10"/><rect fill="url(#blocked)" x="518.9" y="194.0" width="151.1" height="10"/></g>
+<text class="num" x="714" y="203.5" text-anchor="end">33%</text>
+<text class="num sub" x="820" y="203.5" text-anchor="end">3 / 9 · 4 blocked</text>
+<text class="" x="0" y="233.5">8. Testing &amp; Optimization</text>
+<clipPath id="bar224"><rect x="330" y="224.0" width="340" height="10" rx="5.0"/></clipPath><g clip-path="url(#bar224)"><rect class="track" x="330" y="224.0" width="340" height="10"/><rect fill="url(#blocked)" x="608.2" y="224.0" width="61.8" height="10"/></g>
+<text class="num" x="714" y="233.5" text-anchor="end">0%</text>
+<text class="num sub" x="820" y="233.5" text-anchor="end">0 / 11 · 2 blocked</text>
+<text class="" x="0" y="263.5">9. Documentation &amp; Release Preparation</text>
+<clipPath id="bar254"><rect x="330" y="254.0" width="340" height="10" rx="5.0"/></clipPath><g clip-path="url(#bar254)"><rect class="track" x="330" y="254.0" width="340" height="10"/><rect class="done" x="330" y="254.0" width="30.9" height="10"/></g>
+<text class="num" x="714" y="263.5" text-anchor="end">9%</text>
+<text class="num sub" x="820" y="263.5" text-anchor="end">1 / 11</text>
+<text class="" x="0" y="293.5">10. Post-Release Development</text>
+<clipPath id="bar284"><rect x="330" y="284.0" width="340" height="10" rx="5.0"/></clipPath><g clip-path="url(#bar284)"><rect class="track" x="330" y="284.0" width="340" height="10"/></g>
+<text class="num" x="714" y="293.5" text-anchor="end">0%</text>
+<text class="num sub" x="820" y="293.5" text-anchor="end">0 / 8</text>
+<line class="rule" x1="0" x2="820" y1="304.5" y2="304.5"/>
+<text class="strong" x="0" y="327.5">Overall</text>
+<clipPath id="bar318"><rect x="330" y="318.0" width="340" height="10" rx="5.0"/></clipPath><g clip-path="url(#bar318)"><rect class="track" x="330" y="318.0" width="340" height="10"/><rect class="done" x="330" y="318.0" width="174.9" height="10"/><rect fill="url(#blocked)" x="633.0" y="318.0" width="37.0" height="10"/></g>
+<text class="num strong" x="714" y="327.5" text-anchor="end">51%</text>
+<text class="num sub" x="820" y="327.5" text-anchor="end">71 / 138 · 15 blocked</text>
+<rect class="done" x="0" y="349.0" width="12" height="10" rx="2"/><text class="sub" x="18" y="358.0">Done</text><rect class="track" x="70" y="349.0" width="12" height="10" rx="2"/><text class="sub" x="88" y="358.0">Open, can be worked on now</text><rect fill="url(#blocked)" x="270" y="349.0" width="12" height="10" rx="2"/><text class="sub" x="288" y="358.0">Blocked until the game files can be researched</text>
+</svg>

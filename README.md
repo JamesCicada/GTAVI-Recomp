@@ -37,44 +37,21 @@ that material (build system, portable primitives, documentation) continues.
 
 ### Roadmap
 
-| Phase | Progress | Done | Blocked on game files |
-| --- | --- | ---: | ---: |
-| 1. Research & Feasibility | `██████████░░░░▒▒▒▒▒▒` 50% | 11/22 | 7 |
-| 2. Architecture & Design | `██████████████████░░` 92% | 12/13 | — |
-| 3. Development Environment | `███████████████░░░░░` 73% | 8/11 | — |
-| 4. Core Implementation | `████████████████░░▒▒` 80% | 20/25 | 2 |
-| 5. Host Platform Compatibility | `███████████████░░░░░` 75% | 9/12 | — |
-| 6. Graphics, Audio & Input | `█████████░░░░░░░░░░░` 44% | 7/16 | — |
-| 7. Integration & Compatibility | `███████░░░░▒▒▒▒▒▒▒▒▒` 33% | 3/9 | 4 |
-| 8. Testing & Optimization | `░░░░░░░░░░░░░░░░▒▒▒▒` 0% | 0/11 | 2 |
-| 9. Documentation & Release Preparation | `██░░░░░░░░░░░░░░░░░░` 9% | 1/11 | — |
-| 10. Post-Release Development | `░░░░░░░░░░░░░░░░░░░░` 0% | 0/8 | — |
-| **Overall** | `██████████░░░░░░░░▒▒` 51% | **71/138** | **15** |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="progress/roadmap-dark.svg">
+  <img src="progress/roadmap-light.svg" width="820" alt="Roadmap progress: 71 of 138 tasks done (51%), 15 blocked on game files">
+</picture>
 
-`█` done · `░` open, can be worked on now · `▒` blocked until the game files can be researched. Details in [TODO.md](TODO.md).
+Details in [TODO.md](TODO.md).
 
 ### Foundation from AnyPS5
 
 Measured by AnyPS5's own `tools/progress.py` at the pinned commit [`1582613`](https://github.com/boykopovar/AnyPS5/tree/15826135019b8c7de27f42661a850a1dd9750932).
 
-| Component | Progress | Count |
-| --- | --- | ---: |
-| Shaders: AMD RDNA 2 reference, translated | `████████████████████` 100% | 1,460/1,460 |
-| Shaders: LLVM gfx1013 reference, translated | `███████████████████░` 95% | 1,484/1,560 |
-| System library functions (413 libraries) | `█████████░░░░░░░░░░░` 45% | 17,749/39,253 |
-| Controller (`libScePad`) | `█████░░░░░░░░░░░░░░░` 25% | 56/222 |
-| Display output (`libSceVideoOut`) | `█████░░░░░░░░░░░░░░░` 27% | 78/290 |
-| Graphics (AGC) (`libSceAgc`) | `███████████████████░` 99% | 239/242 |
-| Graphics driver (`libSceAgcDriver`) | `████████████░░░░░░░░` 58% | 97/167 |
-| Audio output (`libSceAudioOut`) | `███████░░░░░░░░░░░░░` 36% | 78/219 |
-| Kernel (`libkernel`) | `███████████████████░` 95% | 719/758 |
-| C runtime (`libSceLibcInternal`) | `████████████░░░░░░░░` 59% | 664/1,124 |
-| Module loading (`libSceSysmodule`) | `███████████░░░░░░░░░` 57% | 12/21 |
-| System service (`libSceSystemService`) | `█████░░░░░░░░░░░░░░░` 23% | 144/617 |
-| User service (`libSceUserService`) | `█░░░░░░░░░░░░░░░░░░░` 6% | 44/695 |
-| Save data (`libSceSaveData`) | `█░░░░░░░░░░░░░░░░░░░` 5% | 1/19 |
-| App content (`libSceAppContent`) | `███████████████░░░░░` 77% | 30/39 |
-| Trophies (`libSceNpTrophy2`) | `██████░░░░░░░░░░░░░░` 30% | 18/61 |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="progress/anyps5-dark.svg">
+  <img src="progress/anyps5-light.svg" width="820" alt="AnyPS5: shaders translated 1460/1460 (RDNA 2 reference) and 1484/1560 (gfx1013 reference); system library functions 17749/39253">
+</picture>
 
 The libraries listed are ones nearly every PS5 game imports; GTA VI's actual
 list is unknown until its files can be researched. A translated shader

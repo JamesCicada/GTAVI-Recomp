@@ -9,6 +9,10 @@ Usage:
 
 Two sources feed the report:
 
+Outputs: the README section, which embeds the progress/roadmap-*.svg and
+progress/anyps5-*.svg charts (light and dark variants, rendered by GitHub as
+images), and with --site the Pages data.
+
 * TODO.md. Each "## Phase N: Title" heading is one row. A "- [x]" item is done,
   a "- [ ]" item is open, and an open item whose text contains BLOCKED_MARKER
   is counted as blocked until the game files can be researched.
@@ -29,6 +33,7 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
+from html import escape
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -36,6 +41,7 @@ TODO = ROOT / "TODO.md"
 README = ROOT / "README.md"
 SITE_SOURCE = ROOT / "site"
 SNAPSHOT = ROOT / "progress" / "anyps5.json"
+PROGRESS_DIR = ROOT / "progress"
 ANYPS5 = ROOT / "third_party" / "AnyPS5"
 ANYPS5_PATH = "third_party/AnyPS5"
 ANYPS5_URL = "https://github.com/boykopovar/AnyPS5"
@@ -44,7 +50,6 @@ SITE_URL = "https://jamescicada.github.io/GTAVI-Recomp/"
 BLOCKED_MARKER = "needs game files"
 START = "<!-- progress:start -->"
 END = "<!-- progress:end -->"
-BAR_WIDTH = 20
 
 # System libraries that nearly every PS5 title imports. GTA VI's real import
 # list is unknown until its files can be researched, so this is the expected
@@ -243,25 +248,6 @@ def percent(part: int, whole: int) -> int:
     return round(100 * part / whole) if whole else 0
 
 
-def bar(done: int, total: int, blocked: int = 0) -> str:
-    """Done cells, then open cells, then blocked cells, BAR_WIDTH wide."""
-    if total == 0:
-        return "`" + "░" * BAR_WIDTH + "`"
-    done_cells = round(BAR_WIDTH * done / total)
-    blocked_cells = round(BAR_WIDTH * blocked / total)
-    # Never hide a non-zero count behind rounding, nor round an unfinished
-    # count up to a full bar.
-    if done and not done_cells:
-        done_cells = 1
-    if done < total and done_cells == BAR_WIDTH:
-        done_cells = BAR_WIDTH - 1
-    if blocked and not blocked_cells:
-        blocked_cells = 1
-    blocked_cells = min(blocked_cells, BAR_WIDTH - done_cells)
-    open_cells = BAR_WIDTH - done_cells - blocked_cells
-    return "`" + "█" * done_cells + "░" * open_cells + "▒" * blocked_cells + "`"
-
-
 def number(value: int) -> str:
     return f"{value:,}"
 
@@ -287,6 +273,222 @@ def site_data(phases: list[Phase], snapshot: dict) -> dict:
     }
 
 
+# SVG charts. GitHub renders SVG files referenced from Markdown as images, so
+# the README gets graphical bars. Each chart is written in a light and a dark
+# variant: the README picks one with <picture> and prefers-color-scheme, which
+# GitHub matches to the viewer's GitHub theme (an image's own media queries
+# would follow the OS theme instead). Colours follow GitHub's palette.
+
+SVG_WIDTH = 820
+LABEL_X = 0
+BAR_X = 330
+BAR_W = 340
+PCT_X = BAR_X + BAR_W + 44  # right-aligned
+COUNT_X = SVG_WIDTH  # right-aligned
+ROW_H = 30
+BAR_H = 10
+GROUP_H = 34
+
+THEMES = {
+    "light": {"text": "#1f2328", "sub": "#59636e", "track": "#d1d9e0", "done": "#1f883d", "blocked": "#cf222e"},
+    "dark": {"text": "#f0f6fc", "sub": "#9198a1", "track": "#3d444d", "done": "#2ea043", "blocked": "#f85149"},
+}
+
+
+def svg_head(theme: str) -> str:
+    c = THEMES[theme]
+    return f"""<style>
+  text {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; font-size: 13px; fill: {c['text']}; }}
+  .sub {{ fill: {c['sub']}; font-size: 12px; }}
+  .num {{ font-variant-numeric: tabular-nums; }}
+  .strong {{ font-weight: 600; }}
+  .group {{ font-size: 12px; font-weight: 600; fill: {c['sub']}; letter-spacing: 0.06em; }}
+  .track {{ fill: {c['track']}; }}
+  .done {{ fill: {c['done']}; }}
+  .rule {{ stroke: {c['track']}; }}
+</style>
+<defs>
+  <pattern id="blocked" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <rect width="6" height="6" fill="{c['blocked']}" opacity="0.35"/>
+    <rect width="3" height="6" fill="{c['blocked']}"/>
+  </pattern>
+</defs>"""
+
+
+def svg_bar(y: float, done: int, total: int, blocked: int = 0) -> str:
+    """A rounded track with done filled from the left and blocked from the right."""
+    clip = f"bar{int(y)}"
+    done_w = BAR_W * done / total if total else 0
+    blocked_w = BAR_W * blocked / total if total else 0
+    # Keep tiny non-zero values visible, and never show unfinished work as full.
+    if done and done_w < 3:
+        done_w = 3
+    if done < total and done_w > BAR_W - 3:
+        done_w = BAR_W - 3
+    parts = [
+        f'<clipPath id="{clip}"><rect x="{BAR_X}" y="{y}" width="{BAR_W}" '
+        f'height="{BAR_H}" rx="{BAR_H / 2}"/></clipPath>',
+        f'<g clip-path="url(#{clip})">',
+        f'<rect class="track" x="{BAR_X}" y="{y}" width="{BAR_W}" height="{BAR_H}"/>',
+    ]
+    if done_w:
+        parts.append(f'<rect class="done" x="{BAR_X}" y="{y}" width="{done_w:.1f}" height="{BAR_H}"/>')
+    if blocked_w:
+        parts.append(
+            f'<rect fill="url(#blocked)" x="{BAR_X + BAR_W - blocked_w:.1f}" y="{y}" '
+            f'width="{blocked_w:.1f}" height="{BAR_H}"/>'
+        )
+    parts.append("</g>")
+    return "".join(parts)
+
+
+@dataclass
+class ChartRow:
+    label: str
+    done: int
+    total: int
+    blocked: int = 0
+    sub: str = ""
+    count: str = ""
+    strong: bool = False
+    rule_above: bool = False
+
+
+def svg_chart(title: str, entries: list, theme: str, legend: bool = False) -> str:
+    """entries: ChartRow, or a str for a group heading."""
+    body: list[str] = []
+    y = 4.0
+    for entry in entries:
+        if isinstance(entry, str):
+            y += 8 if body else 0
+            body.append(f'<text class="group" x="{LABEL_X}" y="{y + 16}">{escape(entry.upper())}</text>')
+            y += GROUP_H - 8
+            continue
+        if entry.rule_above:
+            body.append(f'<line class="rule" x1="0" x2="{SVG_WIDTH}" y1="{y + 0.5}" y2="{y + 0.5}"/>')
+            y += 4
+        mid = y + ROW_H / 2
+        weight = " strong" if entry.strong else ""
+        label = escape(entry.label)
+        if entry.sub:
+            label += f' <tspan class="sub">{escape(entry.sub)}</tspan>'
+        body.append(f'<text class="{weight.strip()}" x="{LABEL_X}" y="{mid + 4.5}">{label}</text>')
+        body.append(svg_bar(mid - BAR_H / 2, entry.done, entry.total, entry.blocked))
+        body.append(
+            f'<text class="num{weight}" x="{PCT_X}" y="{mid + 4.5}" text-anchor="end">'
+            f"{percent(entry.done, entry.total)}%</text>"
+        )
+        count = entry.count or f"{number(entry.done)} / {number(entry.total)}"
+        body.append(
+            f'<text class="num sub" x="{COUNT_X}" y="{mid + 4.5}" text-anchor="end">{escape(count)}</text>'
+        )
+        y += ROW_H
+    if legend:
+        y += 10
+        ly = y + 10
+        body.append(
+            f'<rect class="done" x="0" y="{ly - 9}" width="12" height="10" rx="2"/>'
+            f'<text class="sub" x="18" y="{ly}">Done</text>'
+            f'<rect class="track" x="70" y="{ly - 9}" width="12" height="10" rx="2"/>'
+            f'<text class="sub" x="88" y="{ly}">Open, can be worked on now</text>'
+            f'<rect fill="url(#blocked)" x="270" y="{ly - 9}" width="12" height="10" rx="2"/>'
+            f'<text class="sub" x="288" y="{ly}">Blocked until the game files can be researched</text>'
+        )
+        y += 20
+    height = int(y + 6)
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{SVG_WIDTH}" height="{height}" '
+        f'viewBox="0 0 {SVG_WIDTH} {height}" role="img" aria-label="{escape(title)}">\n'
+        f"<title>{escape(title)}</title>\n{svg_head(theme)}\n"
+        + "\n".join(body)
+        + "\n</svg>\n"
+    )
+
+
+def roadmap_chart(phases: list[Phase], theme: str) -> str:
+    done = sum(p.done for p in phases)
+    blocked = sum(p.blocked for p in phases)
+    total = sum(p.total for p in phases)
+    rows = [
+        ChartRow(
+            f"{p.number}. {p.title}",
+            p.done,
+            p.total,
+            p.blocked,
+            count=f"{p.done} / {p.total}" + (f" · {p.blocked} blocked" if p.blocked else ""),
+        )
+        for p in phases
+    ]
+    rows.append(
+        ChartRow(
+            "Overall",
+            done,
+            total,
+            blocked,
+            count=f"{done} / {total} · {blocked} blocked",
+            strong=True,
+            rule_above=True,
+        )
+    )
+    return svg_chart(
+        f"Roadmap: {done} of {total} tasks done, {blocked} blocked on game files",
+        rows,
+        theme,
+        legend=True,
+    )
+
+
+def anyps5_chart(snapshot: dict, theme: str) -> str:
+    shaders = snapshot["shaders"]
+    rdna2, gfx1013 = shaders["rdna2"], shaders["gfx1013"]
+    libs = snapshot["libraries"]
+    entries: list = [
+        "Shader recompiler: instruction forms translated",
+        ChartRow(f"{rdna2['isa']} reference", rdna2["translated"], rdna2["total"]),
+        ChartRow(gfx1013["isa"], gfx1013["translated"], gfx1013["total"]),
+        "System library functions",
+        ChartRow(
+            "All libraries",
+            libs["done"],
+            libs["total"],
+            sub=f"{snapshot['library_count']} libraries",
+            strong=True,
+        ),
+    ]
+    for lib in snapshot["core_libraries"]:
+        entries.append(ChartRow(lib["role"], lib["done"], lib["total"], sub=lib["name"]))
+    return svg_chart(
+        f"AnyPS5 at {snapshot['commit'][:7]}: shaders and system library functions",
+        entries,
+        theme,
+    )
+
+
+def chart_path(name: str, theme: str) -> Path:
+    return PROGRESS_DIR / f"{name}-{theme}.svg"
+
+
+def charts(phases: list[Phase], snapshot: dict) -> dict[Path, str]:
+    out = {}
+    for theme in THEMES:
+        out[chart_path("roadmap", theme)] = roadmap_chart(phases, theme)
+        out[chart_path("anyps5", theme)] = anyps5_chart(snapshot, theme)
+    return out
+
+
+def picture(name: str, alt: str) -> str:
+    """GitHub swaps the <source> to match the viewer's GitHub theme."""
+    def rel(theme: str) -> str:
+        return chart_path(name, theme).relative_to(ROOT).as_posix()
+
+    return (
+        "<picture>\n"
+        f'  <source media="(prefers-color-scheme: dark)" srcset="{rel("dark")}">\n'
+        f'  <img src="{rel("light")}" width="820" alt="{escape(alt)}">\n'
+        "</picture>"
+    )
+
+
 def render_readme(phases: list[Phase], snapshot: dict) -> str:
     done = sum(p.done for p in phases)
     blocked = sum(p.blocked for p in phases)
@@ -310,45 +512,25 @@ def render_readme(phases: list[Phase], snapshot: dict) -> str:
         "",
         "### Roadmap",
         "",
-        "| Phase | Progress | Done | Blocked on game files |",
-        "| --- | --- | ---: | ---: |",
-    ]
-    for p in phases:
-        lines.append(
-            f"| {p.number}. {p.title} | {bar(p.done, p.total, p.blocked)} "
-            f"{percent(p.done, p.total)}% | {p.done}/{p.total} | {p.blocked or '—'} |"
-        )
-    lines += [
-        f"| **Overall** | {bar(done, total, blocked)} {percent(done, total)}% "
-        f"| **{done}/{total}** | **{blocked}** |",
+        picture(
+            "roadmap",
+            f"Roadmap progress: {done} of {total} tasks done ({percent(done, total)}%), "
+            f"{blocked} blocked on game files",
+        ),
         "",
-        "`█` done · `░` open, can be worked on now · `▒` blocked until the game files"
-        " can be researched. Details in [TODO.md](TODO.md).",
+        "Details in [TODO.md](TODO.md).",
         "",
         "### Foundation from AnyPS5",
         "",
         f"Measured by AnyPS5's own `tools/progress.py` at the pinned commit "
         f"[`{commit[:7]}`]({snapshot['source']}).",
         "",
-        "| Component | Progress | Count |",
-        "| --- | --- | ---: |",
-        f"| Shaders: {rdna2['isa']} reference, translated | "
-        f"{bar(rdna2['translated'], rdna2['total'])} {percent(rdna2['translated'], rdna2['total'])}% "
-        f"| {number(rdna2['translated'])}/{number(rdna2['total'])} |",
-        f"| Shaders: {gfx1013['isa']}, translated | "
-        f"{bar(gfx1013['translated'], gfx1013['total'])} "
-        f"{percent(gfx1013['translated'], gfx1013['total'])}% "
-        f"| {number(gfx1013['translated'])}/{number(gfx1013['total'])} |",
-        f"| System library functions ({snapshot['library_count']} libraries) | "
-        f"{bar(libs['done'], libs['total'])} {percent(libs['done'], libs['total'])}% "
-        f"| {number(libs['done'])}/{number(libs['total'])} |",
-    ]
-    for lib in snapshot["core_libraries"]:
-        lines.append(
-            f"| {lib['role']} (`{lib['name']}`) | {bar(lib['done'], lib['total'])} "
-            f"{percent(lib['done'], lib['total'])}% | {number(lib['done'])}/{number(lib['total'])} |"
-        )
-    lines += [
+        picture(
+            "anyps5",
+            f"AnyPS5: shaders translated {rdna2['translated']}/{rdna2['total']} (RDNA 2 "
+            f"reference) and {gfx1013['translated']}/{gfx1013['total']} (gfx1013 reference); "
+            f"system library functions {libs['done']}/{libs['total']}",
+        ),
         "",
         "The libraries listed are ones nearly every PS5 game imports; GTA VI's actual",
         "list is unknown until its files can be researched. A translated shader",
@@ -406,8 +588,18 @@ def main() -> int:
     current = README.read_text(encoding="utf-8")
     updated = splice(current, render_readme(phases, snapshot))
 
+    svgs = charts(phases, snapshot)
+
     if args.check:
         stale = False
+        for path, content in svgs.items():
+            if not path.is_file() or path.read_text(encoding="utf-8") != content:
+                print(
+                    f"{path.relative_to(ROOT).as_posix()} is out of date. "
+                    "Run: python3 scripts/update_progress.py",
+                    file=sys.stderr,
+                )
+                stale = True
         pinned = pinned_anyps5_commit()
         if pinned and pinned != snapshot["commit"]:
             print(
@@ -427,11 +619,17 @@ def main() -> int:
         if stale:
             return 1
         print("Progress report is up to date.")
-    elif updated != current:
-        README.write_text(updated, encoding="utf-8", newline="\n")
-        print("Updated README.md progress section.")
     else:
-        print("README.md progress section already up to date.")
+        for path, content in svgs.items():
+            if not path.is_file() or path.read_text(encoding="utf-8") != content:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8", newline="\n")
+                print(f"Updated {path.relative_to(ROOT).as_posix()}.")
+        if updated != current:
+            README.write_text(updated, encoding="utf-8", newline="\n")
+            print("Updated README.md progress section.")
+        else:
+            print("README.md progress section already up to date.")
 
     if args.site:
         build_site(args.site, site_data(phases, snapshot))
