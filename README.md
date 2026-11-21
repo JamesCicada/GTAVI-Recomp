@@ -209,4 +209,7 @@ If you find this project interesting and want to support its development, consid
 
 ## License
 
-License information will be added once the project's licensing has been established.
+Released under the [MIT License](LICENSE).
+
+The license covers this project's own source code and documentation only. It
+grants no rights to GTA VI, its assets, or any Sony or Rockstar Games material.

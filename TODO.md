@@ -208,7 +208,7 @@ Prepare the project for public use.
 - [ ] Document known limitations.
 - [ ] Publish build instructions.
 - [ ] Finalize contribution guidelines.
-- [ ] Finalize licensing.
+- [x] Finalize licensing. (MIT, `LICENSE`)
 - [ ] Prepare release binaries where appropriate.
 - [ ] Establish versioning conventions.
 - [ ] Create release notes.

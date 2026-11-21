@@ -190,7 +190,7 @@ The objective is to solve problems, not create unnecessary barriers to participa
 
 ## Licensing & Legal Considerations
 
-By contributing, you agree that your submissions must be legally permissible to distribute under the project's license.
+The project is licensed under the [MIT License](LICENSE). By contributing, you agree that your submissions are licensed under it and must be legally permissible to distribute under it.
 
 Do not submit:
 
