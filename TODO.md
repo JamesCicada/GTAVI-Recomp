@@ -12,8 +12,10 @@ See [docs/build.md](docs/build.md) for building and running the test suite.
 Items marked *(needs game files)* cannot start until GTA VI files can be
 researched lawfully (see the README). Until then, work proceeds from public
 research and from [AnyPS5](https://github.com/boykopovar/AnyPS5). The README's
-progress section is generated from this file by `scripts/update_progress.py`;
-run it after changing a checkbox.
+progress section and the [progress page](https://jamescicada.github.io/GTAVI-Recomp/)
+are generated from this file by `scripts/update_progress.py`; run it after
+changing a checkbox. After updating the AnyPS5 submodule, run it with
+`--refresh-anyps5` to re-measure AnyPS5's shader and library numbers.
 
 ## Phase 1: Research & Feasibility
 

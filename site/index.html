@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GTA VI Translation Layer: Progress</title>
+  <meta name="description" content="Progress of the GTA VI PS5-to-PC translation layer: roadmap, shader translation and system libraries.">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="wrap">
+      <p class="eyebrow">PS5 → PC translation layer</p>
+      <h1>GTA VI Translation Layer <span class="muted">progress</span></h1>
+      <nav class="links" aria-label="Project links">
+        <a href="https://github.com/JamesCicada/GTAVI-Recomp">Repository</a>
+        <a href="https://github.com/JamesCicada/GTAVI-Recomp/blob/main/TODO.md">Roadmap</a>
+        <a href="https://github.com/boykopovar/AnyPS5">AnyPS5</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="main">
+    <section class="notice" aria-labelledby="notice-title">
+      <div class="notice-icon" aria-hidden="true">!</div>
+      <div>
+        <h2 id="notice-title">Game research is blocked</h2>
+        <p>
+          No GTA VI files can be researched lawfully yet, so
+          <strong><span data-fill="blocked">–</span> of <span data-fill="tasks">–</span> roadmap tasks</strong>
+          cannot start. Until that changes, the project works from public research and builds on
+          <a href="https://github.com/boykopovar/AnyPS5">AnyPS5</a> to move faster.
+        </p>
+      </div>
+    </section>
+
+    <section aria-label="Summary">
+      <ul class="stats" id="stats"></ul>
+    </section>
+
+    <section class="panel" aria-labelledby="roadmap-title">
+      <div class="panel-head">
+        <h2 id="roadmap-title">Roadmap</h2>
+        <ul class="legend" aria-label="Legend">
+          <li><span class="swatch done"></span>Done</li>
+          <li><span class="swatch open"></span>Open, can be worked on now</li>
+          <li><span class="swatch blocked"></span>Blocked on game files</li>
+        </ul>
+      </div>
+      <ol class="rows" id="phases"></ol>
+    </section>
+
+    <section class="panel" aria-labelledby="shaders-title">
+      <div class="panel-head">
+        <h2 id="shaders-title">Shader recompiler</h2>
+        <p class="panel-note">From AnyPS5, translating PS5 GPU shaders to SPIR-V for Vulkan.</p>
+      </div>
+      <ol class="rows" id="shaders"></ol>
+      <p class="footnote" id="shader-note"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="libs-title">
+      <div class="panel-head">
+        <h2 id="libs-title">System libraries</h2>
+        <p class="panel-note">Functions implemented in AnyPS5. The core set is what nearly every PS5 game imports;
+          GTA VI's actual list is unknown until its files can be researched.</p>
+      </div>
+      <ol class="rows" id="libraries"></ol>
+    </section>
+
+    <p class="error" id="error" hidden>Progress data could not be loaded.</p>
+  </main>
+
+  <footer class="wrap footer">
+    <p id="provenance">Loading…</p>
+    <p>
+      Counts come from source code, not from running a game, and do not show that GTA VI runs.
+      This is an independent project, not affiliated with Rockstar Games, Take-Two Interactive
+      or Sony Interactive Entertainment.
+    </p>
+  </footer>
+</body>
+</html>

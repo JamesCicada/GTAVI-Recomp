@@ -58,3 +58,6 @@ desktop.ini
 
 # Local scratch space for research notes that must not be committed
 /scratch/
+
+# Built progress site (scripts/update_progress.py --site)
+_site/
