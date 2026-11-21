@@ -84,10 +84,10 @@
       "total": 695
     },
     {
-      "name": "libSceSaveData",
+      "name": "libSceSaveData.native",
       "role": "Save data",
-      "done": 1,
-      "total": 19
+      "done": 58,
+      "total": 119
     },
     {
       "name": "libSceAppContent",

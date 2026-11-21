@@ -65,7 +65,9 @@ CORE_LIBRARIES = (
     ("libSceSysmodule", "Module loading"),
     ("libSceSystemService", "System service"),
     ("libSceUserService", "User service"),
-    ("libSceSaveData", "Save data"),
+    # PS5 titles import save data from the .native library; plain
+    # libSceSaveData is the PS4-style name (AnyPS5 docs/dev/debt/libSceSaveData.md).
+    ("libSceSaveData.native", "Save data"),
     ("libSceAppContent", "App content"),
     ("libSceNpTrophy2", "Trophies"),
 )
