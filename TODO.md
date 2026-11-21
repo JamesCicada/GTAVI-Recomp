@@ -9,6 +9,12 @@ Tasks will be updated as development progresses.
 An item is checked only when the implementation is committed and its tests pass.
 See [docs/build.md](docs/build.md) for building and running the test suite.
 
+Items marked *(needs game files)* cannot start until GTA VI files can be
+researched lawfully (see the README). Until then, work proceeds from public
+research and from [AnyPS5](https://github.com/boykopovar/AnyPS5). The README's
+progress section is generated from this file by `scripts/update_progress.py`;
+run it after changing a checkbox.
+
 ## Phase 1: Research & Feasibility
 
 Understand the PS5 build's requirements and determine what the translation layer
@@ -19,21 +25,21 @@ for the evidence standard and the report itself.
 
 - [ ] Identify the PS5 executable container and module format.
 - [ ] Determine how the entry module is loaded and what the entry point expects.
-- [ ] Enumerate imported libraries and symbols.
-- [ ] Identify lazily loaded libraries that a static import table does not show.
+- [ ] Enumerate imported libraries and symbols. *(needs game files)*
+- [ ] Identify lazily loaded libraries that a static import table does not show. *(needs game files)*
 - [ ] Research guest memory layout and allocation behaviour.
 - [ ] Research threading, scheduling, and synchronisation behaviour.
 - [ ] Research filesystem layout and mount-point semantics.
 - [ ] Research graphics requirements (command buffers, shaders, synchronisation).
 - [ ] Research audio output requirements.
 - [ ] Research input device requirements.
-- [ ] Research networking and online service dependencies.
-- [ ] Investigate protection, encryption, and entitlement requirements.
-- [ ] Identify potential compatibility obstacles.
+- [ ] Research networking and online service dependencies. *(needs game files)*
+- [ ] Investigate protection, encryption, and entitlement requirements. *(needs game files)*
+- [ ] Identify potential compatibility obstacles. *(needs game files)*
 
 ### Host & Translation Research
 
-- [ ] Map each imported library to a host implementation strategy.
+- [ ] Map each imported library to a host implementation strategy. *(needs game files)*
 - [ ] Review publicly documented behaviour of comparable translation projects for
       findings. Do not copy code unless its licence permits it.
 - [ ] Identify behaviour that cannot be translated faithfully.
@@ -42,7 +48,7 @@ for the evidence standard and the report itself.
 
 ### Technical Feasibility
 
-- [ ] Determine the minimum library set required to reach a first frame.
+- [ ] Determine the minimum library set required to reach a first frame. *(needs game files)*
 - [ ] Establish whether loading is possible without prohibited material.
 - [ ] Document technical limitations and risks.
 - [ ] Produce the initial research report.
@@ -115,7 +121,7 @@ Implement the foundational translation layer.
 ### Translated Libraries
 
 - [ ] Implement the library module template and registration.
-- [ ] Implement the highest-priority libraries from the import table.
+- [ ] Implement the highest-priority libraries from the import table. *(needs game files)*
 - [ ] Add per-library tests.
 
 ## Phase 5: Host Platform Compatibility
@@ -175,11 +181,11 @@ Bring the individual components together.
 - [ ] Integrate the translation subsystems.
 - [ ] Implement runtime initialization.
 - [ ] Implement dependency detection.
-- [ ] Establish a game installation detection mechanism.
+- [ ] Establish a game installation detection mechanism. *(needs game files)*
 - [ ] Implement diagnostic reporting.
-- [ ] Test individual subsystems against the guest.
-- [ ] Test game startup.
-- [ ] Investigate and resolve compatibility failures.
+- [ ] Test individual subsystems against the guest. *(needs game files)*
+- [ ] Test game startup. *(needs game files)*
+- [ ] Investigate and resolve compatibility failures. *(needs game files)*
 - [ ] Document known limitations.
 
 ## Phase 8: Testing & Optimization
@@ -193,9 +199,9 @@ Ensure correctness, stability, and acceptable performance.
 - [ ] Test supported Linux distributions.
 - [ ] Investigate memory leaks.
 - [ ] Profile CPU and memory usage.
-- [ ] Profile translation overhead.
+- [ ] Profile translation overhead. *(needs game files)*
 - [ ] Optimize performance bottlenecks.
-- [ ] Test long-running stability.
+- [ ] Test long-running stability. *(needs game files)*
 - [ ] Document hardware and software requirements.
 
 ## Phase 9: Documentation & Release Preparation

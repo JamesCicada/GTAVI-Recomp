@@ -62,3 +62,12 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  progress:
+    name: readme progress is up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check README progress section
+        run: python3 scripts/update_progress.py --check
