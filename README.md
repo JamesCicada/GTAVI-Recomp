@@ -29,7 +29,7 @@ that material (build system, portable primitives, documentation) continues.
 
 > [!WARNING]
 > **Game research is blocked.** No GTA VI files can be researched lawfully yet,
-> so 14 of 130 roadmap tasks (11%) cannot start.
+> so 15 of 138 roadmap tasks (11%) cannot start.
 > Until that changes, the project works from public research and builds on
 > [AnyPS5](https://github.com/boykopovar/AnyPS5) to move faster.
 
@@ -39,17 +39,17 @@ that material (build system, portable primitives, documentation) continues.
 
 | Phase | Progress | Done | Blocked on game files |
 | --- | --- | ---: | ---: |
-| 1. Research & Feasibility | `░░░░░░░░░░░░░░▒▒▒▒▒▒` 0% | 0/22 | 7 |
-| 2. Architecture & Design | `████████░░░░░░░░░░░░` 38% | 5/13 | — |
-| 3. Development Environment | `██████████████████░░` 89% | 8/9 | — |
-| 4. Core Implementation | `████░░░░░░░░░░░░░░░▒` 22% | 5/23 | 1 |
-| 5. Host Platform Compatibility | `███████░░░░░░░░░░░░░` 33% | 4/12 | — |
-| 6. Graphics, Audio & Input | `░░░░░░░░░░░░░░░░░░░░` 0% | 0/12 | — |
-| 7. Integration & Compatibility | `░░░░░░░░░░░▒▒▒▒▒▒▒▒▒` 0% | 0/9 | 4 |
+| 1. Research & Feasibility | `██████████░░░░▒▒▒▒▒▒` 50% | 11/22 | 7 |
+| 2. Architecture & Design | `██████████████████░░` 92% | 12/13 | — |
+| 3. Development Environment | `███████████████░░░░░` 73% | 8/11 | — |
+| 4. Core Implementation | `████████████████░░▒▒` 80% | 20/25 | 2 |
+| 5. Host Platform Compatibility | `███████████████░░░░░` 75% | 9/12 | — |
+| 6. Graphics, Audio & Input | `█████████░░░░░░░░░░░` 44% | 7/16 | — |
+| 7. Integration & Compatibility | `███████░░░░▒▒▒▒▒▒▒▒▒` 33% | 3/9 | 4 |
 | 8. Testing & Optimization | `░░░░░░░░░░░░░░░░▒▒▒▒` 0% | 0/11 | 2 |
 | 9. Documentation & Release Preparation | `██░░░░░░░░░░░░░░░░░░` 9% | 1/11 | — |
 | 10. Post-Release Development | `░░░░░░░░░░░░░░░░░░░░` 0% | 0/8 | — |
-| **Overall** | `████░░░░░░░░░░░░░░▒▒` 18% | **23/130** | **14** |
+| **Overall** | `██████████░░░░░░░░▒▒` 51% | **71/138** | **15** |
 
 `█` done · `░` open, can be worked on now · `▒` blocked until the game files can be researched. Details in [TODO.md](TODO.md).
 

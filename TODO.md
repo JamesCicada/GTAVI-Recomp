@@ -6,16 +6,21 @@ release.
 
 Tasks will be updated as development progresses.
 
-An item is checked only when the implementation is committed and its tests pass.
-See [docs/build.md](docs/build.md) for building and running the test suite.
+An item is checked only when the implementation is committed and its tests
+pass, either in this repository or in [AnyPS5](https://github.com/boykopovar/AnyPS5)
+at the pinned submodule commit. Items AnyPS5 provides say so and name where.
+Checking an AnyPS5 item means it exists and is tested there, not that it has
+been shown to work with GTA VI. See [docs/build.md](docs/build.md) for building
+and running this repository's test suite.
 
 Items marked *(needs game files)* cannot start until GTA VI files can be
 researched lawfully (see the README). Until then, work proceeds from public
-research and from [AnyPS5](https://github.com/boykopovar/AnyPS5). The README's
-progress section and the [progress page](https://jamescicada.github.io/GTAVI-Recomp/)
-are generated from this file by `scripts/update_progress.py`; run it after
-changing a checkbox. After updating the AnyPS5 submodule, run it with
-`--refresh-anyps5` to re-measure AnyPS5's shader and library numbers.
+research and from AnyPS5. Work that is not specific to GTA VI belongs upstream
+in AnyPS5. The README's progress section and the
+[progress page](https://jamescicada.github.io/GTAVI-Recomp/) are generated from
+this file by `scripts/update_progress.py`; run it after changing a checkbox.
+After updating the AnyPS5 submodule, run it with `--refresh-anyps5` to
+re-measure AnyPS5's shader and library numbers.
 
 ## Phase 1: Research & Feasibility
 
@@ -25,33 +30,46 @@ for the evidence standard and the report itself.
 
 ### Guest Architecture Research
 
-- [ ] Identify the PS5 executable container and module format.
-- [ ] Determine how the entry module is loaded and what the entry point expects.
+- [x] Identify the PS5 executable container and module format. (AnyPS5: ELF and
+      SELF handling in `core/relinker`, `tools/unwrap_self.py`)
+- [ ] Confirm the console's register contract at the main-module entry point.
+      (AnyPS5 documents its host entry stubs but notes the console contract is
+      not measured; `docs/dev/ARCHITECTURE.md`)
 - [ ] Enumerate imported libraries and symbols. *(needs game files)*
 - [ ] Identify lazily loaded libraries that a static import table does not show. *(needs game files)*
-- [ ] Research guest memory layout and allocation behaviour.
-- [ ] Research threading, scheduling, and synchronisation behaviour.
-- [ ] Research filesystem layout and mount-point semantics.
-- [ ] Research graphics requirements (command buffers, shaders, synchronisation).
-- [ ] Research audio output requirements.
-- [ ] Research input device requirements.
-- [ ] Research networking and online service dependencies. *(needs game files)*
+- [x] Research guest memory layout and allocation behaviour. (AnyPS5: allocators
+      in `docs/dev/ARCHITECTURE.md`, `libkernel/DirectMemory`)
+- [x] Research threading, scheduling, and synchronisation behaviour. (AnyPS5:
+      `libkernel/Pthread`)
+- [x] Research filesystem layout and mount-point semantics. (AnyPS5: `libkernel/File`)
+- [x] Research graphics requirements (command buffers, shaders, synchronisation).
+      (AnyPS5: `libSceAgcDriver`, `core/shader/recompiler`)
+- [x] Research audio output requirements. (AnyPS5: `libSceAudioOut`)
+- [x] Research input device requirements. (AnyPS5: `libScePad`)
+- [ ] Identify the PSN and online calls GTA VI makes at startup even without an
+      online mode, so they can report "not available". *(needs game files)*
 - [ ] Investigate protection, encryption, and entitlement requirements. *(needs game files)*
 - [ ] Identify potential compatibility obstacles. *(needs game files)*
 
 ### Host & Translation Research
 
-- [ ] Map each imported library to a host implementation strategy. *(needs game files)*
-- [ ] Review publicly documented behaviour of comparable translation projects for
-      findings. Do not copy code unless its licence permits it.
-- [ ] Identify behaviour that cannot be translated faithfully.
-- [ ] Evaluate graphics translation targets (Vulkan, Direct3D 12).
-- [ ] Evaluate Windows and Linux host capability differences.
+- [ ] Map each imported library to its AnyPS5 implementation and list the gaps. *(needs game files)*
+- [x] Review publicly documented behaviour of comparable translation projects for
+      findings. Do not copy code unless its licence permits it. (AnyPS5 adopted,
+      GPL-2.0-only; see the README)
+- [ ] Review AnyPS5's technical-debt list (`docs/dev/TechnicalDebt.md`) for
+      behaviour that cannot yet be translated faithfully.
+- [x] Evaluate graphics translation targets (Vulkan, Direct3D 12). (AnyPS5: Vulkan,
+      shaders compiled to SPIR-V)
+- [x] Evaluate Windows and Linux host capability differences. (AnyPS5: separate
+      Windows and Linux allocators and entry stubs)
 
 ### Technical Feasibility
 
 - [ ] Determine the minimum library set required to reach a first frame. *(needs game files)*
-- [ ] Establish whether loading is possible without prohibited material.
+- [x] Establish whether loading is possible without prohibited material. (No:
+      AnyPS5's relinker needs an extracted, decrypted executable;
+      `docs/user/USAGE.md`)
 - [ ] Document technical limitations and risks.
 - [ ] Produce the initial research report.
 
@@ -59,14 +77,17 @@ for the evidence standard and the report itself.
 
 Define the project's architecture before implementing the core components.
 
-- [ ] Finalize the subsystem architecture.
-- [ ] Define the loader interface and entry contract.
-- [ ] Define the library dispatch interface.
-- [ ] Design guest mount-point translation.
-- [ ] Design the graphics translation subsystem.
-- [ ] Design the audio subsystem.
-- [ ] Design the input subsystem.
-- [ ] Design the memory and threading compatibility layer.
+- [ ] Record the move to AnyPS5's relinker in a new ADR, replacing the
+      runtime-loader design in ADR 0002.
+- [x] Define the loader interface and entry contract. (AnyPS5: relinker and entry
+      stubs, `docs/dev/ARCHITECTURE.md`)
+- [x] Define the library dispatch interface. (AnyPS5: exports renamed to NIDs and
+      bound by the host OS loader, `core/libs/nid`)
+- [x] Design guest mount-point translation. (AnyPS5: `libkernel/File`)
+- [x] Design the graphics translation subsystem. (AnyPS5: `libSceAgcDriver` on Vulkan)
+- [x] Design the audio subsystem. (AnyPS5: `libSceAudioOut` on SDL2)
+- [x] Design the input subsystem. (AnyPS5: `libScePad` on SDL2, `docs/user/INPUT_MAPPING.md`)
+- [x] Design the memory and threading compatibility layer. (AnyPS5: `libkernel`)
 - [x] Define error handling and logging standards. (`gtavi/error.h`, `gtavi/log.h`)
 - [x] Establish cross-platform coding conventions. (`.clang-format`, `.editorconfig`)
 - [x] Select supported C++ standard. (C++20)
@@ -86,6 +107,9 @@ Prepare the development infrastructure.
 - [x] Configure CI workflows. (`.github/workflows/ci.yml`)
 - [x] Establish debugging and diagnostic tooling. (`gtavi-probe`)
 - [x] Create development documentation. (`docs/build.md`)
+- [ ] Build AnyPS5 locally (Windows needs the MinGW-w64 GCC toolchain;
+      `third_party/AnyPS5/docs/dev/BUILD.md`).
+- [ ] Build AnyPS5 at the pinned commit in CI.
 
 ## Phase 4: Core Implementation
 
@@ -93,38 +117,51 @@ Implement the foundational translation layer.
 
 ### Core Runtime
 
-- [ ] Implement the loader.
-- [ ] Implement import resolution and the dispatch table.
-- [ ] Implement module initialization and shutdown.
-- [ ] Implement configuration management.
+- [x] Implement the loader. (AnyPS5: `core/relinker`)
+- [x] Implement import resolution and the dispatch table. (AnyPS5: NID binding,
+      `core/libs/nid`)
+- [x] Implement module initialization and shutdown. (AnyPS5: deferred module
+      start through `sceKernelLoadStartModule`)
+- [x] Implement configuration management. (AnyPS5: environment variables,
+      `anyps5-input.ini`)
 - [x] Implement structured logging. (`gtavi/log.h`)
 - [x] Implement error handling. (`gtavi/error.h`)
 - [x] Implement runtime diagnostics. (`gtavi-probe`)
 
 ### Filesystem
 
-- [ ] Implement the guest filesystem abstraction.
-- [ ] Implement guest mount-point mapping (`/app0`, `/data`, `/user`, ...).
+- [x] Implement the guest filesystem abstraction. (AnyPS5: `libkernel/File`)
+- [x] Implement `/app0` mount-point mapping. (AnyPS5: `libkernel/File`)
+- [ ] Confirm which other mount points GTA VI uses (`/data`, `/savedata0`, ...)
+      and that AnyPS5 maps them. *(needs game files)*
 - [x] Implement host path translation. (`gtavi/path.h`, host-side only)
 - [x] Handle host drive letters and mount points. (`DriveMap`, C: -> /mnt/c)
-- [ ] Implement file access compatibility.
-- [ ] Implement directory and metadata handling.
+- [x] Implement file access compatibility. (AnyPS5: `libkernel/File`)
+- [x] Implement directory and metadata handling. (AnyPS5:
+      `libkernel/File/src/DirectoryDescriptor.cpp`)
 - [ ] Handle permissions and access control differences.
 - [ ] Implement file operation testing.
 
 ### Memory & Processes
 
-- [ ] Research and implement required memory compatibility mechanisms.
-- [ ] Investigate virtual memory behaviour differences.
-- [ ] Implement process and thread management interfaces.
-- [ ] Handle thread creation and synchronisation.
-- [ ] Implement required runtime compatibility mechanisms.
+- [x] Research and implement required memory compatibility mechanisms. (AnyPS5:
+      Windows, macOS and Linux allocators)
+- [x] Investigate virtual memory behaviour differences. (AnyPS5:
+      `docs/dev/ARCHITECTURE.md`)
+- [x] Implement process and thread management interfaces. (AnyPS5: `libkernel`)
+- [x] Handle thread creation and synchronisation. (AnyPS5: `libkernel/Pthread`)
+- [x] Implement required runtime compatibility mechanisms. (AnyPS5: relinker
+      `--to-intel` lowers AMD-only instructions)
 
 ### Translated Libraries
 
-- [ ] Implement the library module template and registration.
+- [x] Implement the library module template and registration. (AnyPS5:
+      `core/libs/prx`, 413 libraries)
 - [ ] Implement the highest-priority libraries from the import table. *(needs game files)*
-- [ ] Add per-library tests.
+- [x] Add per-library tests. (AnyPS5: a `tests/` directory per library)
+- [ ] Fill the gaps in core libraries nearly every PS5 game uses, upstream in
+      AnyPS5: user service (44/695 functions), system service (144/617), save
+      data (1/19), display output (78/290). Current numbers are on the progress page.
 
 ## Phase 5: Host Platform Compatibility
 
@@ -133,23 +170,26 @@ Implement host-specific integrations and the dispatch mechanism.
 ### Windows
 
 - [x] Implement Windows platform detection. (`gtavi/platform.h`)
-- [ ] Implement Windows-specific host interfaces.
+- [x] Implement Windows-specific host interfaces. (AnyPS5: Windows PE output and
+      host libraries)
 - [x] Establish Windows build and testing pipeline. (CI: MSVC)
 - [ ] Verify behaviour against native Windows APIs.
 
 ### Linux
 
 - [x] Implement Linux platform detection. (`gtavi/platform.h`)
-- [ ] Implement POSIX host interfaces.
-- [ ] Implement Linux-specific system integrations.
+- [x] Implement POSIX host interfaces. (AnyPS5: Linux ELF output and host libraries)
+- [x] Implement Linux-specific system integrations. (AnyPS5: audio and input
+      through SDL2, graphics through Vulkan)
 - [x] Establish Linux build and testing pipeline. (CI: GCC, Clang)
 - [ ] Verify behaviour against native Linux interfaces.
 
 ### Library Dispatch
 
 - [ ] Implement symbol resolution with clear errors for missing imports.
-- [ ] Implement stub reporting for unimplemented symbols.
-- [ ] Test dispatch against a table-driven harness.
+- [x] Implement stub reporting for unimplemented symbols. (AnyPS5:
+      `NotImplemented_nid_no_patch` stubs)
+- [x] Test dispatch against a table-driven harness. (AnyPS5: relinker test suite)
 
 ## Phase 6: Graphics, Audio & Input
 
@@ -157,34 +197,44 @@ Implement the guest's major subsystems.
 
 ### Graphics
 
-- [ ] Identify the command buffer and shader formats.
-- [ ] Prototype command-stream translation.
-- [ ] Evaluate translation targets (Vulkan, Direct3D 12).
-- [ ] Implement the graphics interface.
+- [x] Identify the command buffer and shader formats. (AnyPS5: APR and AMM
+      command buffers, RDNA decoder)
+- [x] Prototype command-stream translation. (AnyPS5: `libSceAgcDriver`)
+- [x] Evaluate translation targets (Vulkan, Direct3D 12). (AnyPS5: Vulkan)
+- [x] Translate GPU shaders. (AnyPS5: `core/shader/recompiler`, every RDNA 2
+      reference instruction form)
+- [ ] Translate the remaining gfx1013 reference instruction forms (1,484/1,560)
+      and reduce the recompiler's unsupported cases.
+- [ ] Complete the graphics driver (AnyPS5 `libSceAgcDriver`: 97/167 functions).
 - [ ] Test rendering correctness.
 - [ ] Investigate performance overhead.
 
 ### Audio
 
-- [ ] Identify audio output requirements.
-- [ ] Implement audio output for Windows and Linux hosts.
+- [x] Identify audio output requirements. (AnyPS5: `libSceAudioOut`)
+- [x] Implement basic audio output for Windows and Linux hosts. (AnyPS5:
+      `libSceAudioOut` on SDL2)
+- [ ] Complete the audio output library (78/219 functions).
 - [ ] Test device handling and format conversion.
 
 ### Input
 
-- [ ] Implement controller input.
-- [ ] Implement haptics and adaptive triggers where feasible.
+- [x] Implement basic controller input. (AnyPS5: `libScePad` on SDL2, with
+      keyboard and mouse mapping)
+- [ ] Complete the controller library (56/222 functions).
+- [ ] Implement haptics and adaptive triggers where feasible. (AnyPS5 has rumble;
+      adaptive triggers unverified)
 - [ ] Test input behaviour.
 
 ## Phase 7: Integration & Compatibility
 
 Bring the individual components together.
 
-- [ ] Integrate the translation subsystems.
-- [ ] Implement runtime initialization.
+- [x] Integrate the translation subsystems. (AnyPS5)
+- [x] Implement runtime initialization. (AnyPS5: entry stubs and module start-up)
 - [ ] Implement dependency detection.
 - [ ] Establish a game installation detection mechanism. *(needs game files)*
-- [ ] Implement diagnostic reporting.
+- [x] Implement diagnostic reporting. (AnyPS5: `anyps5-report.json` run report)
 - [ ] Test individual subsystems against the guest. *(needs game files)*
 - [ ] Test game startup. *(needs game files)*
 - [ ] Investigate and resolve compatibility failures. *(needs game files)*
