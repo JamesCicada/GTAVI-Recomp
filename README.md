@@ -1,26 +1,26 @@
 # GTA VI Translation Layer
 
-A translation layer that makes the PlayStation 5 build of Grand Theft Auto VI run
-natively on PC, by providing native implementations of the PS5 system libraries
-the game depends on.
+A project to run the PlayStation 5 build of Grand Theft Auto VI natively on PC,
+built on [AnyPS5](https://github.com/boykopovar/AnyPS5).
 
-The approach is library-level translation, in the manner of AnyPS5: the game's own
-executable runs unmodified, and the calls it makes into the PS5 platform are
-intercepted and served by equivalent implementations on the host. Nothing is
-recompiled, and instructions are not emulated one by one.
+AnyPS5 converts a PS5 executable into a native Windows or Linux program and links
+it against its own implementations of the PS5 system libraries. The game's code
+runs directly on the PC's processor: nothing is emulated, and the game's code is
+not rewritten. This project adds what is specific to GTA VI: research into what
+the game needs, fixes and library work contributed back to AnyPS5, game-specific
+patches and configuration, and progress tracking.
 
-**Status:** Early development. The build system, core primitives, and diagnostic
-tools exist and are covered by tests. No PS5 libraries are implemented yet, and
-the project makes no compatibility claims.
+**Status:** Early development. AnyPS5 provides the relinker, 413 system libraries
+and a shader recompiler, but nothing has been tested with GTA VI, and the project
+makes no compatibility claims.
 
 **Research availability:** Development is limited by what can be researched
 without game files. The project will not work from game content, extracted
 assets, PS5 system files, decryption keys, or leaked material, in order to avoid
-DMCA exposure for contributors and the project. Until non-game reference material
-is obtainable — public platform documentation, library documentation, published
-format specifications, or files the rights holder makes available — Phase 1 and
-the work that depends on it will be slow and may stall. Work that needs none of
-that material (build system, portable primitives, documentation) continues.
+DMCA exposure for contributors and the project. Until GTA VI's files can be
+researched lawfully, work that depends on them is blocked; the progress section
+below shows how much. Work that needs none of that material (documentation,
+upstream library work in AnyPS5, tooling) continues.
 
 ## Progress
 
@@ -39,7 +39,7 @@ that material (build system, portable primitives, documentation) continues.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="progress/roadmap-dark.svg">
-  <img src="progress/roadmap-light.svg" width="820" alt="Roadmap progress: 71 of 138 tasks done (51%), 15 blocked on game files">
+  <img src="progress/roadmap-light.svg" width="820" alt="Roadmap progress: 75 of 138 tasks done (54%), 15 blocked on game files">
 </picture>
 
 Details in [TODO.md](TODO.md).
@@ -62,101 +62,103 @@ code paths that report an unsupported case.
 
 ## Overview
 
-The goal is to run the PS5 build of the game on a normal PC without requiring the
-game to be rewritten, patched into a different program, or emulated at the
-hardware level.
+The goal is to run the PS5 build of the game on a normal PC without rewriting the
+game or emulating the console's hardware.
 
 A PS5 title is an ordinary x86-64 program that expects a specific operating
 system, a specific set of system libraries, and a specific graphics and audio
-stack. The translation layer supplies those expectations on the host:
+stack. AnyPS5 supplies those on the PC:
 
-- the executable is loaded and its imports are resolved against our own
-  implementations instead of Sony's libraries;
-- filesystem access through PS5 mount points is mapped onto host directories;
-- the graphics command stream is translated to a PC graphics API;
-- audio output, input devices, threading, and memory behaviour are provided by
-  host-native backends.
+- its **relinker** converts the game's executable, ahead of time, into a native
+  Windows (PE) or Linux (ELF) program whose imports point at AnyPS5's libraries
+  instead of Sony's;
+- its **system libraries** (`libkernel`, `libScePad`, `libSceAudioOut`, ...)
+  provide files and PS5 mount points such as `/app0`, memory, threads, audio and
+  controller input on top of the host operating system;
+- its **graphics driver and shader recompiler** translate the PS5 graphics command
+  stream to Vulkan and the game's GPU shaders to SPIR-V.
 
-The scaffolding this needs — a cross-platform build, error and logging
-primitives, host path translation, and diagnostics — is already in place. See
-[docs/build.md](docs/build.md).
+The game itself is never shipped by this project. Users supply their own copy,
+and the converted executable is produced on their machine and never distributed.
 
 ## Features & Goals
 
-- **Library translation:** Native implementations of the PS5 system libraries the
-  game imports, in place of emulation or recompilation.
-- **Unmodified game binary:** Run the shipped executable; avoid patching the game
-  where a faithful library implementation will do.
-- **Filesystem translation:** Map PS5 mount points onto host directories, with
-  the access semantics the game expects.
-- **Graphics translation:** Translate the PS5 graphics command stream to Vulkan or
-  Direct3D 12.
-- **Audio and input:** Provide PS5 audio output and DualSense input on the host.
-- **Host portability:** Support Windows and Linux hosts from one codebase.
-- **Modular architecture:** Keep each translated library independent and
-  testable.
+- **Built on AnyPS5:** Use its relinker, libraries and shader recompiler instead
+  of writing a separate translation layer.
+- **Upstream first:** Work any PS5 title could use goes to AnyPS5; this
+  repository keeps what is specific to GTA VI.
+- **No emulation:** The game's code runs natively; only system library calls are
+  served by AnyPS5's implementations.
+- **Graphics on Vulkan:** The PS5 graphics command stream and shaders are
+  translated to Vulkan and SPIR-V.
+- **Audio and input:** PS5 audio output and controller input on the host, with
+  keyboard and mouse mapping.
+- **Host portability:** Windows and Linux hosts from one codebase.
+- **Clear progress:** Generated progress charts show what is done, what is open,
+  and what is blocked on game files.
 - **Community-driven development:** Welcome contributions from developers,
   researchers, testers, and AI coding agents.
 
 ## Architecture
 
-The layer sits between the game and the host operating system. The game talks to
-PS5 libraries; the layer answers with host implementations.
-
 ```text
-                 PS5 game build
-        (executable, data, mount points)
-                       |
-                       v
-               Translation Layer
-        library dispatch + host backends
-          (libSce* -> native code)
-                       |
-            +----------+----------+
-            |                     |
-            v                     v
-       Windows host          Linux host
-    (Win32, DXGI/D3D12,    (POSIX, Vulkan,
-     WASAPI, XInput)        PipeWire, evdev)
+   PS5 game build (supplied by the user)
+   eboot executable + bundled modules
+                  |
+                  v
+        AnyPS5 relinker  (ahead of time, on the user's machine)
+   converts to a native program, imports bound by NID
+                  |
+                  v
+   Native program  --->  AnyPS5 system libraries (libkernel, libScePad, ...)
+   (app.exe / app.elf)   graphics driver + shader recompiler -> Vulkan
+                  |
+        +---------+---------+
+        |                   |
+        v                   v
+   Windows host         Linux host
 ```
 
-Subsystem boundaries, the loader contract, and the dispatch mechanism are defined
-in [ADR 0002](docs/adr/0002-ps5-to-pc-library-translation.md). Individual
-decisions are recorded as ADRs under [docs/adr/](docs/adr/).
+This repository sits beside AnyPS5: it holds GTA VI's research, patches,
+configuration and tests, and AnyPS5 is pinned as a submodule in
+`third_party/AnyPS5`. The decision and its reasons are recorded in
+[ADR 0003](docs/adr/0003-build-on-anyps5-relinker.md); AnyPS5's own design is in
+its [architecture document](third_party/AnyPS5/docs/dev/ARCHITECTURE.md).
+Individual decisions are recorded as ADRs under [docs/adr/](docs/adr/).
 
 ## Platform Support
 
 | Target | Status |
 | --- | --- |
-| Guest: PS5 build | Research phase — no libraries implemented |
-| Host: Windows 10/11 | Builds and tests pass (MSVC) |
-| Host: Linux | Builds and tests pass in CI (GCC, Clang) |
+| Guest: GTA VI, PS5 build | Not tested: the game files cannot be researched yet |
+| AnyPS5 on Windows | Supported upstream (MinGW-w64 GCC); not yet built by this project |
+| AnyPS5 on Linux | Supported upstream; not yet built by this project |
+| This repository's tooling | Builds and tests pass on Windows (MSVC) and Linux (GCC, Clang) |
 
-Compatibility will be documented as individual libraries are implemented and
-tested. Nothing here is a statement that the game currently runs.
+Nothing here is a statement that the game currently runs.
 
 ## Repository Layout
 
 ```text
-include/gtavi/      public headers
-src/                portable implementation
-src/platform/       per-OS implementation, selected by CMake only
+third_party/AnyPS5/ AnyPS5, pinned as a git submodule
+docs/               ADRs, research, build notes
+progress/           generated progress charts and AnyPS5 measurements
+site/               the progress page published to GitHub Pages
+scripts/            progress generator and build helpers
+include/gtavi/      project tooling: public headers
+src/                project tooling: implementation (OS-specific code in src/platform/)
 tools/probe/        gtavi-probe diagnostic front end
-tests/              unit tests and the minimal test framework
-scripts/            helper build scripts
-docs/               build notes, ADRs, research
+tests/              unit tests for the project tooling
 cmake/              shared build configuration
 ```
 
-Only `src/platform/` may contain OS-specific code. Everything else compiles on
-both Windows and Linux.
+The `gtavi` code under `include/`, `src/` and `tools/` is project tooling. It is
+not on the game's runtime path; see [ADR 0003](docs/adr/0003-build-on-anyps5-relinker.md).
 
 ## Building from Source
 
-Requires CMake 3.21+ and a C++20 compiler. No third-party libraries.
-
-On Windows, the helper script locates the Visual Studio toolchain and runs all
-three steps:
+This repository's own tooling needs CMake 3.21+ and a C++20 compiler. On Windows,
+the helper script locates the Visual Studio toolchain and runs all three steps:
 
 ```bat
 scripts\build-windows.bat
@@ -170,26 +172,27 @@ cmake --build --preset debug
 ctest --preset debug
 ```
 
-Full instructions, including Windows environment setup and the diagnostic tool,
-are in [docs/build.md](docs/build.md).
+Full instructions are in [docs/build.md](docs/build.md).
+
+AnyPS5 is built separately with its own toolchain (MinGW-w64 GCC on Windows).
+Fetch it with `git submodule update --init --recursive third_party/AnyPS5` and
+follow its [build instructions](third_party/AnyPS5/docs/dev/BUILD.md).
 
 ## Development Roadmap
 
 Development is organized into several phases:
 
-1. **Research & Feasibility** — Investigate the PS5 executable format, the
-   libraries the game imports, and the host requirements for each subsystem.
-2. **Architecture & Design** — Define the loader, dispatch mechanism, and
-   subsystem interfaces.
-3. **Development Environment** — Configure build systems, testing infrastructure,
-   and development tools.
-4. **Core Implementation** — Implement the loader, library dispatch, filesystem
-   mapping, and memory and process compatibility.
-5. **Host Platform Compatibility** — Implement Windows and Linux host backends.
-6. **Graphics, Audio & Input** — Translate the graphics command stream, audio
-   output, and controller input.
-7. **Integration & Testing** — Bring components together and investigate
-   compatibility failures.
+1. **Research & Feasibility** — Learn what GTA VI needs from the PS5 platform,
+   starting from what AnyPS5 already documents.
+2. **Architecture & Design** — Build on AnyPS5 and record the decisions.
+3. **Development Environment** — Build systems, CI, and building AnyPS5.
+4. **Core Implementation** — Fill gaps in the libraries GTA VI is likely to need,
+   upstream in AnyPS5.
+5. **Host Platform Compatibility** — Verify behaviour on Windows and Linux hosts.
+6. **Graphics, Audio & Input** — Complete the graphics driver, shaders, audio and
+   controller libraries.
+7. **Integration & Testing** — Test GTA VI once its files can be researched
+   lawfully, and fix what fails.
 8. **Optimization** — Improve performance, stability, and resource usage.
 9. **Release Preparation** — Complete documentation and prepare public releases.
 

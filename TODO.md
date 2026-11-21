@@ -57,8 +57,9 @@ for the evidence standard and the report itself.
 - [x] Review publicly documented behaviour of comparable translation projects for
       findings. Do not copy code unless its licence permits it. (AnyPS5 adopted,
       GPL-2.0-only; see the README)
-- [ ] Review AnyPS5's technical-debt list (`docs/dev/TechnicalDebt.md`) for
+- [x] Review AnyPS5's technical-debt list (`docs/dev/TechnicalDebt.md`) for
       behaviour that cannot yet be translated faithfully.
+      (`docs/research/limitations-and-risks.md`)
 - [x] Evaluate graphics translation targets (Vulkan, Direct3D 12). (AnyPS5: Vulkan,
       shaders compiled to SPIR-V)
 - [x] Evaluate Windows and Linux host capability differences. (AnyPS5: separate
@@ -70,15 +71,16 @@ for the evidence standard and the report itself.
 - [x] Establish whether loading is possible without prohibited material. (No:
       AnyPS5's relinker needs an extracted, decrypted executable;
       `docs/user/USAGE.md`)
-- [ ] Document technical limitations and risks.
-- [ ] Produce the initial research report.
+- [x] Document technical limitations and risks. (`docs/research/limitations-and-risks.md`)
+- [x] Produce the initial research report. (`docs/research/phase-1-research-report.md`;
+      GTA VI-specific sections remain blocked)
 
 ## Phase 2: Architecture & Design
 
 Define the project's architecture before implementing the core components.
 
-- [ ] Record the move to AnyPS5's relinker in a new ADR, replacing the
-      runtime-loader design in ADR 0002.
+- [x] Record the move to AnyPS5's relinker in a new ADR, replacing the
+      runtime-loader design in ADR 0002. (ADR 0003)
 - [x] Define the loader interface and entry contract. (AnyPS5: relinker and entry
       stubs, `docs/dev/ARCHITECTURE.md`)
 - [x] Define the library dispatch interface. (AnyPS5: exports renamed to NIDs and
@@ -92,7 +94,7 @@ Define the project's architecture before implementing the core components.
 - [x] Establish cross-platform coding conventions. (`.clang-format`, `.editorconfig`)
 - [x] Select supported C++ standard. (C++20)
 - [x] Configure CMake build system.
-- [x] Document architectural decisions. (ADR 0002, accepted)
+- [x] Document architectural decisions. (ADR 0003, accepted; supersedes ADR 0002)
 
 ## Phase 3: Development Environment
 
@@ -161,7 +163,7 @@ Implement the foundational translation layer.
 - [x] Add per-library tests. (AnyPS5: a `tests/` directory per library)
 - [ ] Fill the gaps in core libraries nearly every PS5 game uses, upstream in
       AnyPS5: user service (44/695 functions), system service (144/617), save
-      data (1/19), display output (78/290). Current numbers are on the progress page.
+      data (58/119), display output (78/290). Current numbers are on the progress page.
 
 ## Phase 5: Host Platform Compatibility
 

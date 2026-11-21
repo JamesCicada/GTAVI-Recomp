@@ -1,6 +1,6 @@
 # ADR 0002: PS5-to-PC library translation
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR 0003](0003-build-on-anyps5-relinker.md)
 - **Date:** 2026-11-20
 - **Deciders:** project maintainer
 - **Supersedes:** [ADR 0001](0001-project-scope.md)

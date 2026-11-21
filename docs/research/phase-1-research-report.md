@@ -1,8 +1,8 @@
 # Phase 1 Research Report
 
-- **Status:** Template — no findings recorded yet
+- **Status:** In progress — filled from public sources and AnyPS5; GTA VI-specific findings blocked
 - **Owner:** unassigned
-- **Last updated:** 2026-11-20
+- **Last updated:** 2026-11-21
 
 This document is the deliverable for Phase 1 of `TODO.md`. It records what has
 been *observed* about the PS5 build and the host platforms, not what is assumed.
@@ -71,26 +71,46 @@ demoted before it is relied on. It is listed only to give the research a shape.
 
 ---
 
+Most findings below come from AnyPS5's source and documentation at commit
+[`1582613`](https://github.com/boykopovar/AnyPS5/tree/15826135019b8c7de27f42661a850a1dd9750932),
+pinned in `third_party/AnyPS5`. They are **Reported**: AnyPS5 states them and its
+code implements them, but this project has not reproduced them on a console or
+with GTA VI. Paths in the Evidence column are relative to `third_party/AnyPS5`.
+Risks and gaps are collected in [limitations-and-risks.md](limitations-and-risks.md).
+
 ## 1. Executable container and module loading
 
 **Question:** What container holds the executable, how is it loaded, and what
 does the entry point expect?
 
-| Field | Value |
-| --- | --- |
-| Container format | _unknown_ |
-| Module format | _unknown_ |
-| Architecture | _unknown_ |
-| Encryption / signing | _unknown_ |
-| Loader entry contract | _unknown_ |
+| Field | Value | Confidence | Evidence |
+| --- | --- | --- | --- |
+| Container format | SELF/fSELF containers wrapping ELF images | Reported | `docs/user/USAGE.md`, `tools/unwrap_self.py` |
+| Module format | x86-64 ELF; bundled modules are `.prx` ELF files in `sce_module/` | Reported | `docs/user/USAGE.md` |
+| Main module name | `eboot.bin`, under `/app0` | Reported | `core/libs/prx/libkernel/AppMetadata/src/AppMetadata.cpp` |
+| Architecture | x86-64 (AMD Zen 2 class) | Reported | Public specifications; AnyPS5 runs guest code natively on x86-64 |
+| Encryption / signing | Executables are encrypted; AnyPS5 needs them decrypted | Reported | `docs/user/USAGE.md` ("does not extract or decrypt package files") |
+| Import binding | Imports are named by NID, a hash of the symbol name | Reported | `docs/dev/ARCHITECTURE.md` |
+| Loader entry contract | Host entry stubs documented; console register state not measured | Reported | `docs/dev/ARCHITECTURE.md` ("Main-module entry registers", AnyPS5 #9048) |
 
-Findings: none recorded.
+```text
+Finding:      Loading requires a decrypted executable, which the project cannot
+              legitimately obtain.
+Evidence:     third_party/AnyPS5/docs/user/USAGE.md, "Input and conversion"
+Reproduction: n/a (external documentation)
+Confidence:   Reported
+Implication:  Running GTA VI depends on users supplying their own decrypted copy.
+              The project does not provide or explain decryption (ADR 0003).
+```
 
-Open questions:
+Answers to the earlier open questions:
 
-- Does loading require entitlements or keys the project cannot legitimately
-  obtain? If so, this is **Blocked** and must be stated plainly.
-- Are there secondary modules loaded at runtime, or is everything in one image?
+- **Do entitlements or keys block loading?** Yes, for the project itself: see the
+  finding above.
+- **Are secondary modules loaded at run time?** Yes. A title can ship its own
+  modules in `sce_module/` and load some later with `sceKernelLoadStartModule`;
+  AnyPS5 defers starting those until the title asks (`docs/user/USAGE.md`,
+  "Module start-up"). Which modules GTA VI ships is unknown. **Blocked.**
 
 ## 2. Imported library surface
 
@@ -100,137 +120,167 @@ This is the single most important table in the project: it defines the work.
 
 | Library | Symbols imported | Subsystem | Priority | Evidence |
 | --- | --- | --- | --- | --- |
-| _none recorded_ | | | | |
+| _none recorded_ | | | | **Blocked**: needs GTA VI's executable |
+
+Until this is known, work targets the libraries nearly every PS5 title imports;
+see section 11 and [limitations-and-risks.md](limitations-and-risks.md#3-gaps-in-the-core-libraries).
+AnyPS5's `tools/import_audit.py` can produce this table once an executable can be
+examined lawfully.
 
 Open questions:
 
 - Which imports are optional (loaded lazily by name) and therefore invisible in a
-  static import table?
-- Which imports are only used by features we can initially omit?
+  static import table? **Blocked.**
+- Which imports are only used by features we can initially omit? **Blocked.**
 
 ## 3. Guest OS behaviour
 
 **Question:** Which OS behaviours does the guest depend on that a PC host does not
 provide identically?
 
-| Behaviour | Guest expectation | Host difference | Impact |
+| Behaviour | Guest expectation | Host handling in AnyPS5 | Confidence |
 | --- | --- | --- | --- |
-| Virtual memory layout | _unknown_ | _unknown_ | |
-| Executable memory permissions | _unknown_ | _unknown_ | |
-| Thread priorities and affinity | _unknown_ | _unknown_ | |
-| Timing and clocks | _unknown_ | _unknown_ | |
-| Synchronisation primitives | _unknown_ | _unknown_ | |
-| Signal / exception handling | _unknown_ | _unknown_ | |
+| Virtual memory layout | Direct memory mapped by the title | Separate Windows and macOS/Linux allocators (`docs/dev/ARCHITECTURE.md`, `libkernel/DirectMemory`) | Reported |
+| Executable memory permissions | _unknown_ | _not reviewed_ | Unverified |
+| Thread priorities and affinity | `scePthread*` API | `libkernel/Pthread` on host threads | Reported |
+| Timing and clocks | _unknown_ | `libkernel`; some values fixed (`sceKernelGetCpumode` returns 0) | Reported |
+| Synchronisation primitives | Mutexes, semaphores, condition variables | `libkernel`; some attributes accepted and ignored (debt: silent stubs) | Reported |
+| Thread cancellation | Deferred and asynchronous cancellation | Deferred requests handled; asynchronous cases unverified (`docs/dev/ARCHITECTURE.md`) | Reported |
 
 ## 4. Filesystem and mount points
 
 **Question:** Which mount points does the guest use, and what semantics does it
 expect from them?
 
-| Mount point | Purpose | Read/write | Host mapping candidate |
-| --- | --- | --- | --- |
-| `/app0` | _unknown_ | _unknown_ | Game install directory |
-| `/data` | _unknown_ | _unknown_ | _unknown_ |
-| `/user` | _unknown_ | _unknown_ | User profile directory |
-| _others_ | | | |
+| Mount point | Purpose | Read/write | Host mapping | Confidence |
+| --- | --- | --- | --- | --- |
+| `/app0` | The game's install: `eboot.bin`, modules, `sce_sys/param.json` | Read | Converted program's `app0/` directory (`libkernel/File`) | Reported |
+| `/data`, `/user`, `/savedata0`, ... | _unknown for GTA VI_ | _unknown_ | _not reviewed_ | Blocked |
 
 Note: `DriveMap` / `windows_to_posix` in `src/path.cpp` handle **host** paths
-only. Guest mount-point translation is a separate subsystem and is not
-implemented.
+only and are not used by AnyPS5.
 
 Open questions:
 
-- Does the guest rely on case-insensitive lookups, or on exact names?
-- Does it expect POSIX permissions, ownership, or read-only mounts to behave in a
-  particular way?
+- Which other mount points does GTA VI use? **Blocked.**
+- Does the guest rely on case-insensitive lookups, or on exact names? _Not reviewed._
 
 ## 5. Graphics
 
 **Question:** What graphics interface does the guest use, and what is the
 translation target?
 
-| Field | Value |
-| --- | --- |
-| API family | _unknown_ |
-| Command buffer format | _unknown_ |
-| Shader format | _unknown_ |
-| Synchronisation model | _unknown_ |
-| Translation target | Vulkan or D3D12 (undecided) |
+| Field | Value | Confidence | Evidence |
+| --- | --- | --- | --- |
+| API family | AGC (`libSceAgc`, `libSceAgcDriver`) | Reported | `core/libs/prx/libSceAgc*` |
+| Command buffer format | APR and AMM command buffers | Reported | `docs/dev/ARCHITECTURE.md`, "APR and AMM command buffers" |
+| Shader format | AMD RDNA-family GPU machine code; AnyPS5 tracks RDNA 2 and gfx1013 references | Reported | `docs/dev/PROGRESS.md` |
+| Synchronisation model | _not reviewed_ | Unverified | |
+| Translation target | Vulkan; shaders recompiled to SPIR-V | Reported | `libSceAgcDriver/Execution/src/VulkanDevice.cpp`, `core/shader/recompiler` |
 
-Findings: none recorded.
+Answers to the earlier open questions:
 
-Open questions:
-
-- Is a command-stream translation layer sufficient, or is a higher-level
-  interception point available?
-- What is the cost of translating shaders ahead of time versus at load?
+- **Is command-stream translation sufficient?** It is the approach AnyPS5 takes,
+  and it has run at least one title. Whether it holds up for GTA VI is unknown.
+- **Cost of translating shaders ahead of time versus at load?** AnyPS5 has a
+  shader disk cache (`core/shader/recompiler/ShaderDiskCache.cpp`). Cost for
+  GTA VI is unknown. **Blocked.**
 
 ## 6. Audio
 
-| Field | Value |
-| --- | --- |
-| Output API | _unknown_ |
-| Channel / format expectations | _unknown_ |
-| 3D audio usage | _unknown_ |
-| Host backends | WASAPI (Windows), PipeWire/ALSA (Linux) — candidates |
+| Field | Value | Confidence | Evidence |
+| --- | --- | --- | --- |
+| Output API | `libSceAudioOut` (78 / 219 functions implemented) | Reported | AnyPS5 progress scan |
+| Channel / format expectations | _not reviewed_ | Unverified | |
+| 3D audio usage | `libSceAudio3d` exists in AnyPS5 (32 functions); GTA VI's use unknown | Reported / Blocked | AnyPS5 progress scan |
+| Host backend | SDL2 audio | Reported | `libSceAudioOut/src/AudioOut.cpp` |
 
 ## 7. Input
 
-| Field | Value |
-| --- | --- |
-| Input API | _unknown_ |
-| Device features used (haptics, adaptive triggers) | _unknown_ |
-| Host backends | XInput / Raw Input (Windows), evdev (Linux) — candidates |
+| Field | Value | Confidence | Evidence |
+| --- | --- | --- | --- |
+| Input API | `libScePad` (56 / 222 functions implemented) | Reported | AnyPS5 progress scan |
+| Device features used | Rumble supported; DualSense haptic audio approximated as rumble; adaptive triggers unverified | Reported | `TechnicalDebt.md`, `libScePad` sources |
+| Host backend | SDL2 game controllers, plus keyboard and mouse mapping | Reported | `docs/user/INPUT_MAPPING.md` |
 
 ## 8. Networking and online services
 
-**Question:** Does the guest require network services, and are they in scope?
-
-Findings: none recorded. Note that online services may be out of scope by design;
-record that decision here if so.
+GTA VI has no online mode released, so online services are out of scope for now.
+The game may still call PSN functions at startup, for example to check account
+state. AnyPS5 makes unsupported PSN account queries throw rather than return a
+fake answer (`sceUserServiceIsUserStorageAccountBound`), so any such call would
+stop the game until it is handled. Which calls GTA VI makes is unknown.
+**Blocked.**
 
 ## 9. Protection and entitlements
 
-**Question:** Which protection mechanisms exist, and do they block translation?
-
-Record only whether a mechanism exists and what it requires. Do not document
-bypass techniques, and do not include keys or entitlement data.
+Executables are encrypted, and AnyPS5 needs them decrypted (section 1). Whether
+GTA VI performs entitlement checks at run time is unknown. **Blocked.** As
+required above, this report records only that the mechanism exists.
 
 ## 10. Compatibility obstacles
 
 | Obstacle | Category | Severity | Blocking | Evidence |
 | --- | --- | --- | --- | --- |
-| _none recorded_ | | | | |
+| Decrypted executable cannot be obtained by the project | Access | Critical | Yes | Section 1 |
+| Unimplemented functions throw and end the process | Libraries | High | Per function | `TechnicalDebt.md` |
+| Graphics driver behaviour gaps (312 debt entries) | Graphics | High | Unknown | `debt/libSceAgcDriver.md` |
+| 76 gfx1013 shader forms and 126 unsupported recompiler paths | Graphics | Medium | Unknown | Progress scan |
+| User and system services largely unimplemented | Libraries | Medium | Unknown | Progress scan |
+
+Details in [limitations-and-risks.md](limitations-and-risks.md).
 
 ## 11. Library-to-host mapping
 
-One row per library, filled in as designs are decided.
+The libraries nearly every PS5 title imports, and AnyPS5's implementation of
+each. GTA VI's own list is **Blocked** (section 2).
 
 | Guest library | Host implementation | Fidelity | Notes |
 | --- | --- | --- | --- |
-| _none recorded_ | | | |
+| `libkernel` | AnyPS5 `libkernel` | 719 / 758 functions | Memory, threads, files, modules |
+| `libSceLibcInternal` | AnyPS5 `libSceLibcInternal` | 664 / 1,124 | C runtime |
+| `libSceAgc`, `libSceAgcDriver` | AnyPS5, on Vulkan | 239 / 242, 97 / 167 | Graphics |
+| `libSceVideoOut` | AnyPS5 `libSceVideoOut` | 78 / 290 | Display output |
+| `libSceAudioOut` | AnyPS5, on SDL2 | 78 / 219 | Audio output |
+| `libScePad` | AnyPS5, on SDL2 | 56 / 222 | Controller |
+| `libSceUserService` | AnyPS5 `libSceUserService` | 44 / 695 | User accounts |
+| `libSceSystemService` | AnyPS5 `libSceSystemService` | 144 / 617 | System service |
+| `libSceSaveData.native` | AnyPS5 `libSceSaveData.native` | 58 / 119 | Save data |
+
+Counts are implemented / declared functions from AnyPS5's own progress tool;
+current figures are on the [progress page](https://jamescicada.github.io/GTAVI-Recomp/).
 
 ## 12. Feasibility conclusions
 
-- What is the minimum library set for a first frame? _unknown_
-- Is command-stream graphics translation viable? _unknown_
-- Can guest memory and threading be delegated to the host? _unknown_
-- Which parts must be reimplemented rather than delegated? _unknown_
-- Is the project blocked by entitlements or encryption? _unknown_
+- **What is the minimum library set for a first frame?** Unknown. **Blocked** on
+  GTA VI's import list.
+- **Is command-stream graphics translation viable?** Yes in general: AnyPS5 does
+  it. Viable for GTA VI: unknown.
+- **Can guest memory and threading be delegated to the host?** Largely, as
+  AnyPS5's `libkernel` does, with the unmeasured areas listed in section 3.
+- **Which parts must be reimplemented rather than delegated?** The system
+  libraries themselves, which AnyPS5 implements on host APIs.
+- **Is the project blocked by entitlements or encryption?** Yes, for the
+  project's own research: it cannot lawfully obtain a decrypted executable.
 
 ## Risk register
 
 | Risk | Likelihood | Impact | Mitigation | Status |
 | --- | --- | --- | --- | --- |
-| No legitimate research material available | High | High | Keep work scoped to portable code; mark rest **Blocked** | Open |
-| Encryption or entitlements block loading | Unknown | High | Establish early; do not bypass | Open |
-| Graphics translation is infeasible or too slow | Medium | High | Prototype the command stream early | Open |
+| No legitimate research material available | High | High | Work from AnyPS5 and public sources; mark the rest **Blocked** | Open |
+| Encryption blocks loading | Certain | High | Users supply their own copy; the project never bypasses it | Accepted |
+| Graphics translation is incomplete or too slow for GTA VI | Medium | High | Contribute to AnyPS5's graphics driver and recompiler | Open |
 | Undocumented behaviour is misread, causing subtle bugs | High | Medium | Require reproducible evidence; test per library | Open |
 | Legal exposure from research inputs | Medium | High | Enforce the DMCA-avoidance policy in `CONTRIBUTE.md` | Open |
+| Upstream AnyPS5 does not accept or prioritise GTA VI needs | Medium | Medium | Follow AnyPS5's conventions; keep GTA VI-only work here | Open |
 
 ## Open questions
 
-1. _none recorded_
+1. Which libraries, functions and mount points does GTA VI use? **Blocked.**
+2. Does GTA VI make PSN or entitlement calls at startup without an online mode?
+   **Blocked.**
+3. What is the console's register state at the main-module entry point? Needs a
+   console, not the game (AnyPS5 #9048).
 
 ## Changelog
 
@@ -238,3 +288,4 @@ One row per library, filled in as designs are decided.
 | --- | --- | --- |
 | 2026-11-20 | Template created | — |
 | 2026-11-20 | Reworked for PS5-to-PC library translation (ADR 0002) | — |
+| 2026-11-21 | Filled sections from AnyPS5's documentation and code (ADR 0003) | — |
