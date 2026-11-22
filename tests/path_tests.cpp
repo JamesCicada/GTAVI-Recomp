@@ -144,6 +144,23 @@ GTAVI_TEST(invalid_mapping_entries_are_dropped) {
     CHECK_EQ(map.mappings().size(), std::size_t{1});
 }
 
+GTAVI_TEST(duplicate_drive_keeps_the_first_mapping_in_both_directions) {
+    const DriveMap map = DriveMap::with_mappings({
+        DriveMapping{'D', "/local/game"},
+        DriveMapping{'d', "/archive"},
+    });
+    CHECK_EQ(map.mappings().size(), std::size_t{1});
+    const auto windows = posix_to_windows("/local/game/app0", map);
+    CHECK_TRUE(windows.ok());
+    CHECK_EQ(windows.value(), std::string{"D:\\app0"});
+    const auto posix = windows_to_posix("d:\\app0", map);
+    CHECK_TRUE(posix.ok());
+    CHECK_EQ(posix.value(), std::string{"/local/game/app0"});
+    const auto discarded = posix_to_windows("/archive/app0", map);
+    CHECK_FALSE(discarded.ok());
+    CHECK_EQ(discarded.error().code(), ErrorCode::PathUnmappedDrive);
+}
+
 GTAVI_TEST(root_mount_point_is_supported) {
     const DriveMap map = DriveMap::with_mappings({DriveMapping{'R', "/"}});
     const auto result = windows_to_posix("R:\\Games", map);
