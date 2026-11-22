@@ -72,6 +72,8 @@ Result<std::string> windows_to_posix(std::string_view windows_path, const DriveM
 ///   "/mnt/c"       -> "C:\\"
 ///
 /// The input must be absolute and must fall under a configured mount point.
+/// Repeated slashes are collapsed. A literal backslash cannot be represented in
+/// a Windows file name.
 Result<std::string> posix_to_windows(std::string_view posix_path, const DriveMap& map);
 
 }  // namespace gtavi
