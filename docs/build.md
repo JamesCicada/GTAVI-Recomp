@@ -93,6 +93,22 @@ C:\Games\GTA VI\data -> /mnt/c/Games/GTA VI/data
 
 Include its output when reporting platform-specific bugs.
 
+## Checking a PS5 application directory
+
+Python 3.11 or newer can check the readable input files before you run the relinker:
+
+```console
+python scripts/check_app0.py /path/to/app0 --title-id PPSA99999 --content-version 01.000.000
+```
+
+Use the application's own `sce_sys/param.json` and a readable ELF at `eboot.bin`.
+Both flags are optional. The JSON report includes file hashes for valid inputs
+and reports separate errors for missing or malformed files. The tool reads the
+files in place. Passing the check confirms their structure and any requested
+identity fields. Relinking and execution require further verification.
+
+Run the generated-fixture tests with `python -I tests/test_check_app0.py`.
+
 ## Layout
 
 ```text
