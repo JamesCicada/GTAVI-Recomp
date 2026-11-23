@@ -63,6 +63,15 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+  app0:
+    name: PS5 app0 preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test the app0 checker
+        run: python3 -I tests/test_check_app0.py
+
   progress:
     name: readme progress is up to date
     runs-on: ubuntu-latest
