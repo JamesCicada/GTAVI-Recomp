@@ -135,6 +135,16 @@ GTAVI_TEST(mount_point_trailing_separator_is_normalised) {
     CHECK_EQ(result.value(), std::string{"/games/GTA"});
 }
 
+GTAVI_TEST(custom_mount_points_use_normalized_posix_separators) {
+    const DriveMap map = DriveMap::with_mappings({DriveMapping{'D', "/mnt//archive/"}});
+    const auto posix = windows_to_posix("D:\\app0", map);
+    CHECK_TRUE(posix.ok());
+    CHECK_EQ(posix.value(), std::string{"/mnt/archive/app0"});
+    const auto windows = posix_to_windows("/mnt/archive/app0", map);
+    CHECK_TRUE(windows.ok());
+    CHECK_EQ(windows.value(), std::string{"D:\\app0"});
+}
+
 GTAVI_TEST(invalid_mapping_entries_are_dropped) {
     const DriveMap map = DriveMap::with_mappings({
         DriveMapping{'1', "/bad-drive"},
@@ -176,6 +186,17 @@ GTAVI_TEST(mount_point_becomes_drive_root) {
 
 GTAVI_TEST(posix_root_with_trailing_separator_becomes_drive_root) {
     CHECK_EQ(to_windows("/mnt/c/"), std::string{"C:\\"});
+}
+
+GTAVI_TEST(repeated_posix_separators_are_collapsed_before_mount_lookup) {
+    CHECK_EQ(to_windows("/mnt//d/Games///Title/"), std::string{"D:\\Games\\Title"});
+    CHECK_EQ(to_windows("/mnt//d/"), std::string{"D:\\"});
+}
+
+GTAVI_TEST(literal_backslash_in_posix_name_is_rejected) {
+    const auto result = posix_to_windows("/mnt/d/game\\content/file", DriveMap::default_map());
+    CHECK_FALSE(result.ok());
+    CHECK_EQ(result.error().code(), ErrorCode::PathUnsupportedForm);
 }
 
 GTAVI_TEST(nested_posix_path_becomes_windows_path) {

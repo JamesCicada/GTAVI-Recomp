@@ -79,7 +79,8 @@ DriveMap DriveMap::with_mappings(std::vector<DriveMapping> mappings) {
         if (!is_drive_letter(mapping.drive)) {
             continue;
         }
-        if (mapping.mount_point.empty() || mapping.mount_point.front() != '/') {
+        if (mapping.mount_point.empty() || mapping.mount_point.front() != '/' ||
+            mapping.mount_point.find('\\') != std::string::npos || contains_nul(mapping.mount_point)) {
             continue;
         }
         mapping.drive = to_upper_ascii(mapping.drive);
@@ -91,6 +92,9 @@ DriveMap DriveMap::with_mappings(std::vector<DriveMapping> mappings) {
         }
         while (mapping.mount_point.size() > 1 && mapping.mount_point.back() == '/') {
             mapping.mount_point.pop_back();
+        }
+        if (mapping.mount_point.find("//") != std::string::npos) {
+            mapping.mount_point = normalize_separators(mapping.mount_point);
         }
         map.mappings_.push_back(std::move(mapping));
     }
@@ -211,7 +215,12 @@ Result<std::string> posix_to_windows(std::string_view posix_path, const DriveMap
         return Error{ErrorCode::PathInvalid, "POSIX path must be absolute: " + quoted(posix_path)};
     }
 
-    auto drive = map.drive_for(posix_path);
+    if (posix_path.find('\\') != std::string_view::npos) {
+        return Error{ErrorCode::PathUnsupportedForm, "POSIX path contains a literal backslash: " + quoted(posix_path)};
+    }
+
+    const std::string normalized = normalize_separators(posix_path);
+    auto drive = map.drive_for(normalized);
     if (!drive) {
         return drive.error();
     }
@@ -222,7 +231,7 @@ Result<std::string> posix_to_windows(std::string_view posix_path, const DriveMap
     }
 
     const std::string& mount = mount_point.value();
-    const std::string_view remainder = posix_path.substr(mount.size());
+    const std::string_view remainder = std::string_view{normalized}.substr(mount.size());
 
     std::string out;
     out.reserve(remainder.size() + 2);
