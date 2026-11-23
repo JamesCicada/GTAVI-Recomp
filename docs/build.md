@@ -91,6 +91,13 @@ C:\Games\GTA VI\data -> /mnt/c/Games/GTA VI/data
 /mnt/c/Games -> C:\Games
 ```
 
+Use the repeatable `--mount` option to override a drive's default mount point.
+The first override for each drive applies to every translation in the command.
+
+```console
+gtavi-probe --mount D:/games --to-posix "D:\PS5\app0" --to-windows /games/PS5/app0
+```
+
 Include its output when reporting platform-specific bugs.
 
 ## Layout
