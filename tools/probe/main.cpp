@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 
 #include "gtavi/log.h"
 #include "gtavi/path.h"
@@ -16,13 +18,15 @@ namespace {
 
 void print_usage() {
     std::fputs(
-        "usage: gtavi-probe [--to-posix <windows-path>] [--to-windows <posix-path>]...\n"
+        "usage: gtavi-probe [--mount <drive:/root>] [--to-posix <windows-path>]\n"
+        "                   [--to-windows <posix-path>]...\n"
         "\n"
         "Prints host information and translates the supplied paths using the\n"
-        "default drive map (C: -> /mnt/c).\n"
+        "default drive map (A: through Z: -> /mnt/a through /mnt/z).\n"
         "\n"
         "  --to-posix <path>    translate a Windows path to a POSIX path\n"
         "  --to-windows <path>  translate a POSIX path to a Windows path\n"
+        "  --mount <drive:/root> override a drive's mount for all translations\n"
         "  -h, --help           show this message\n",
         stderr);
 }
@@ -44,6 +48,11 @@ int print_platform_info(gtavi::Logger& logger) {
     return 0;
 }
 
+struct Translation {
+    bool to_posix;
+    std::string_view path;
+};
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -59,8 +68,8 @@ int main(int argc, char* argv[]) {
         return exit_code;
     }
 
-    const gtavi::DriveMap map = gtavi::DriveMap::default_map();
-
+    std::vector<gtavi::DriveMapping> mounts;
+    std::vector<Translation> translations;
     for (int index = 1; index < argc; ++index) {
         const std::string_view option = argv[index];
 
@@ -69,7 +78,7 @@ int main(int argc, char* argv[]) {
             return exit_code;
         }
 
-        if (option != "--to-posix" && option != "--to-windows") {
+        if (option != "--to-posix" && option != "--to-windows" && option != "--mount") {
             logger.error("unknown argument: " + to_string(option));
             print_usage();
             return 2;
@@ -81,8 +90,23 @@ int main(int argc, char* argv[]) {
         }
 
         const std::string_view path = argv[++index];
+        if (option == "--mount") {
+            if (!gtavi::has_drive_designator(path) || path.size() < 3 || path[2] != '/' ||
+                path.find('\\') != std::string_view::npos) {
+                logger.error("invalid mount: " + to_string(path) + " (expected drive:/absolute/posix/path)");
+                return 2;
+            }
+            mounts.push_back({path.front(), to_string(path.substr(2))});
+        } else {
+            translations.push_back({option == "--to-posix", path});
+        }
+    }
 
-        if (option == "--to-posix") {
+    const auto defaults = gtavi::DriveMap::default_map();
+    mounts.insert(mounts.end(), defaults.mappings().begin(), defaults.mappings().end());
+    const auto map = gtavi::DriveMap::with_mappings(std::move(mounts));
+    for (const auto& [to_posix, path] : translations) {
+        if (to_posix) {
             const auto converted = gtavi::windows_to_posix(path, map);
             if (converted) {
                 std::printf("%s -> %s\n", to_string(path).c_str(), converted.value().c_str());
