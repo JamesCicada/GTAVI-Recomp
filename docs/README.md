@@ -7,6 +7,7 @@
 | [adr/0002-ps5-to-pc-library-translation.md](adr/0002-ps5-to-pc-library-translation.md) | Superseded: library translation with this project's own runtime loader |
 | [adr/0001-project-scope.md](adr/0001-project-scope.md) | Superseded: earlier translation-vs-recompilation framing |
 | [research/phase-1-research-report.md](research/phase-1-research-report.md) | Phase 1 research findings and evidence standard |
+| [research/related-projects.md](research/related-projects.md) | Related projects (AnyPS5, americas-recomp, Leonida), their licences and what may be reused |
 | [community/discord.md](community/discord.md) | Discord server layout, roles, rules, welcome message, FAQ and update webhooks |
 | [research/limitations-and-risks.md](research/limitations-and-risks.md) | What stands between the project and GTA VI running, from AnyPS5's code and docs |
 
