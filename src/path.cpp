@@ -1,5 +1,6 @@
 #include "gtavi/path.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <utility>
 
@@ -82,6 +83,12 @@ DriveMap DriveMap::with_mappings(std::vector<DriveMapping> mappings) {
             continue;
         }
         mapping.drive = to_upper_ascii(mapping.drive);
+        const bool duplicate = std::ranges::any_of(map.mappings_, [&mapping](const DriveMapping& entry) {
+            return entry.drive == mapping.drive;
+        });
+        if (duplicate) {
+            continue;
+        }
         while (mapping.mount_point.size() > 1 && mapping.mount_point.back() == '/') {
             mapping.mount_point.pop_back();
         }

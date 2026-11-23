@@ -34,6 +34,7 @@ class DriveMap {
     /// Builds a map from explicit mappings. Drive letters are uppercased and
     /// trailing separators are stripped from mount points. Entries with an
     /// invalid drive letter or a non-absolute mount point are dropped.
+    /// The first valid mapping for each drive letter is kept.
     static DriveMap with_mappings(std::vector<DriveMapping> mappings);
 
     /// Returns the mount point for `drive`, or ErrorCode::PathUnmappedDrive.
