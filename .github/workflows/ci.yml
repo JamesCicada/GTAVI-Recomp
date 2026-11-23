@@ -78,5 +78,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Test the progress tooling
+        run: python3 -m unittest discover -s tests/python -v
+
       - name: Check README progress section
         run: python3 scripts/update_progress.py --check
