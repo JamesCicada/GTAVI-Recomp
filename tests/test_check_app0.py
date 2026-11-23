@@ -50,6 +50,19 @@ class CheckApp0Tests(unittest.TestCase):
         self.assertEqual(report["metadata"]["content_version"], "01.000.000")
         self.assertIn("eboot.bin", report["errors"])
 
+    def test_content_id_distinguishes_packages_with_equal_title_and_version(self):
+        base = "UP0000-PPSA99999_00-BASE000000000000"
+        addon = "UP0000-PPSA99999_00-EXTRA00000000001"
+        args = ("--title-id", "PPSA99999", "--content-version", "01.000.000", "--content-id", base)
+        data = json.loads(self.param.read_bytes())
+        self.assertIn("content ID", self.probe(*args, status=2)["errors"]["sce_sys/param.json"])
+        data["contentId"] = addon
+        self.param.write_text(json.dumps(data), encoding="utf-8")
+        self.assertIn(addon, self.probe(*args, status=2)["errors"]["sce_sys/param.json"])
+        data["contentId"] = base
+        self.param.write_text(json.dumps(data), encoding="utf-8")
+        self.assertEqual(self.probe(*args)["metadata"]["content_id"], base)
+
     def test_duplicate_title_fields_are_rejected(self):
         self.param.write_text('{"titleId":"PPSA99999","titleId":"PPSA99998","contentVersion":"01.000.000"}',
                               encoding="utf-8")

@@ -24,7 +24,7 @@ def unique_object(pairs):
     return result
 
 
-def read_param(path, expected_title, expected_version):
+def read_param(path, expected_title, expected_version, expected_content=None):
     with path.open("rb") as stream:
         raw = stream.read(MAX_PARAM_BYTES + 1)
     if len(raw) > MAX_PARAM_BYTES:
@@ -42,7 +42,13 @@ def read_param(path, expected_title, expected_version):
         raise ValueError(f"title ID is {title}, expected {expected_title}")
     if expected_version and version != expected_version:
         raise ValueError(f"content version is {version}, expected {expected_version}")
-    return {"title_id": title, "content_version": version, "sha256": hashlib.sha256(raw).hexdigest()}
+    content = data.get("contentId")
+    if expected_content is not None and content != expected_content:
+        raise ValueError(f"content ID is {content!r}, expected {expected_content!r}")
+    result = {"title_id": title, "content_version": version, "sha256": hashlib.sha256(raw).hexdigest()}
+    if isinstance(content, str):
+        result["content_id"] = content
+    return result
 
 
 def read_elf(path, *, module=False):
@@ -87,7 +93,7 @@ def read_elf(path, *, module=False):
     return {"bytes": before.st_size, "sha256": digest}
 
 
-def check_app0(directory, title=None, version=None, modules=()):
+def check_app0(directory, title=None, version=None, modules=(), *, content_id=None):
     report = {"app0": str(directory), "metadata": None, "executable": None, "errors": {}}
     if modules:
         report["modules"] = {f"sce_module/{name}": None for name in modules}
@@ -95,7 +101,7 @@ def check_app0(directory, title=None, version=None, modules=()):
         report["errors"]["app0"] = "expected an application directory"
         return report
     try:
-        report["metadata"] = read_param(directory / "sce_sys/param.json", title, version)
+        report["metadata"] = read_param(directory / "sce_sys/param.json", title, version, content_id)
     except RecursionError:
         report["errors"]["sce_sys/param.json"] = "metadata is nested too deeply"
     except (OSError, ValueError) as error:
@@ -122,11 +128,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("app0", type=Path, help="user-supplied application directory")
     parser.add_argument("--title-id", help="expected title ID")
+    parser.add_argument("--content-id", help="expected full package content ID")
     parser.add_argument("--content-version", help="expected content version")
     parser.add_argument("--module", action="append", type=module_name, default=[],
                         help="require a readable .prx in sce_module (repeatable)")
     args = parser.parse_args(argv)
-    report = check_app0(args.app0, args.title_id, args.content_version, args.module)
+    report = check_app0(args.app0, args.title_id, args.content_version, args.module, content_id=args.content_id)
     print(json.dumps(report, indent=2))
     return 2 if report["errors"] else 0
 

@@ -102,7 +102,8 @@ python scripts/check_app0.py /path/to/app0 --title-id PPSA99999 --content-versio
 ```
 
 Use the application's own `sce_sys/param.json` and a readable ELF at `eboot.bin`.
-Both flags are optional. Repeat `--module example.prx` to check explicitly named
+Identity flags are optional. Use `--content-id` to distinguish packages that
+share a title ID and version. Repeat `--module example.prx` to check explicitly named
 shared modules under `sce_module/` in the same application directory. The JSON
 report includes file hashes for valid inputs
 and reports separate errors for missing or malformed files. The tool reads the
