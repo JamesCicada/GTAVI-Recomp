@@ -45,22 +45,25 @@ def read_param(path, expected_title, expected_version):
     return {"title_id": title, "content_version": version, "sha256": hashlib.sha256(raw).hexdigest()}
 
 
-def read_eboot(path):
+def read_elf(path, *, module=False):
+    role = "shared module" if module else "executable"
+    allowed_types = (3, 0xFE18) if module else (2, 3, 0xFE10)
     with path.open("rb") as stream:
         before = os.fstat(stream.fileno())
         header = stream.read(ELF_HEADER.size)
         if header[:4] in SELF_MAGIC:
-            raise ValueError("found a SELF container; supply a readable ELF executable")
+            raise ValueError(f"found a SELF container; supply a readable ELF {role}")
         if len(header) != ELF_HEADER.size or header[:7] != b"\x7fELF\x02\x01\x01":
-            raise ValueError("expected a little-endian 64-bit ELF executable")
+            raise ValueError(f"expected a little-endian 64-bit ELF {role}")
         _, kind, machine, version, entry, phoff, _, _, ehsize, phsize, count, _, _, _ = ELF_HEADER.unpack(header)
-        if machine != 62 or version != 1 or kind not in (2, 3, 0xFE10):
-            raise ValueError("expected an x86-64 ELF executable")
+        if machine != 62 or version != 1 or kind not in allowed_types:
+            raise ValueError(f"expected an x86-64 ELF {role}")
         if (ehsize != ELF_HEADER.size or phsize != PROGRAM_HEADER.size or not count
                 or phoff < ehsize or phoff + count * phsize > before.st_size):
             raise ValueError("invalid program-header table")
         stream.seek(phoff)
         entry_present = False
+        file_data_present = False
         for _ in range(count):
             raw = stream.read(phsize)
             if len(raw) != phsize:
@@ -70,19 +73,24 @@ def read_eboot(path):
                 continue
             if stored > memory or offset + stored > before.st_size or address + memory > 1 << 64:
                 raise ValueError("invalid load segment")
+            file_data_present |= stored > 0
             entry_present |= bool(flags & 1) and address <= entry < address + stored
-        if not entry_present:
+        if module and not file_data_present:
+            raise ValueError("shared module has no file-backed load segment")
+        if not module and not entry_present:
             raise ValueError("entry point is outside the executable file-backed segments")
         stream.seek(0)
         digest = hashlib.file_digest(stream, "sha256").hexdigest()
         after = os.fstat(stream.fileno())
         if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
-            raise ValueError("executable changed during inspection")
+            raise ValueError(f"{role} changed during inspection")
     return {"bytes": before.st_size, "sha256": digest}
 
 
-def check_app0(directory, title=None, version=None):
+def check_app0(directory, title=None, version=None, modules=()):
     report = {"app0": str(directory), "metadata": None, "executable": None, "errors": {}}
+    if modules:
+        report["modules"] = {f"sce_module/{name}": None for name in modules}
     if not directory.is_dir():
         report["errors"]["app0"] = "expected an application directory"
         return report
@@ -93,10 +101,21 @@ def check_app0(directory, title=None, version=None):
     except (OSError, ValueError) as error:
         report["errors"]["sce_sys/param.json"] = str(error)
     try:
-        report["executable"] = read_eboot(directory / "eboot.bin")
+        report["executable"] = read_elf(directory / "eboot.bin")
     except (OSError, ValueError) as error:
         report["errors"]["eboot.bin"] = str(error)
+    for relative_path in report.get("modules", {}):
+        try:
+            report["modules"][relative_path] = read_elf(directory / relative_path, module=True)
+        except (OSError, ValueError) as error:
+            report["errors"][relative_path] = str(error)
     return report
+
+
+def module_name(value):
+    if not re.fullmatch(r"[a-zA-Z0-9_][a-zA-Z0-9_.-]*\.prx", value, re.IGNORECASE):
+        raise argparse.ArgumentTypeError("expected a .prx basename under sce_module")
+    return value
 
 
 def main(argv=None):
@@ -104,8 +123,10 @@ def main(argv=None):
     parser.add_argument("app0", type=Path, help="user-supplied application directory")
     parser.add_argument("--title-id", help="expected title ID")
     parser.add_argument("--content-version", help="expected content version")
+    parser.add_argument("--module", action="append", type=module_name, default=[],
+                        help="require a readable .prx in sce_module (repeatable)")
     args = parser.parse_args(argv)
-    report = check_app0(args.app0, args.title_id, args.content_version)
+    report = check_app0(args.app0, args.title_id, args.content_version, args.module)
     print(json.dumps(report, indent=2))
     return 2 if report["errors"] else 0
 

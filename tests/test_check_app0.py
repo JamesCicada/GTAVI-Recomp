@@ -12,9 +12,9 @@ import unittest
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/check_app0.py"
 
 
-def executable(entry=0x400078, segment_end=121):
+def executable(entry=0x400078, segment_end=121, kind=0xFE10):
     ident = b"\x7fELF\x02\x01\x01" + bytes(9)
-    header = struct.pack("<16sHHIQQQIHHHHHH", ident, 0xFE10, 62, 1, entry, 64, 0, 0, 64, 56, 1, 0, 0, 0)
+    header = struct.pack("<16sHHIQQQIHHHHHH", ident, kind, 62, 1, entry, 64, 0, 0, 64, 56, 1, 0, 0, 0)
     load = struct.pack("<IIQQQQQQ", 1, 5, 0, 0x400000, 0, segment_end, segment_end, 4096)
     return header + load + b"\xc3"
 
@@ -73,6 +73,32 @@ class CheckApp0Tests(unittest.TestCase):
                                (executable(entry=0x500000), "entry point")):
             self.eboot.write_bytes(fixture)
             self.assertIn(error, self.probe(status=2)["errors"]["eboot.bin"])
+
+    def test_reports_readable_and_missing_modules_without_an_eboot(self):
+        self.eboot.unlink()
+        (self.app0 / "sce_module").mkdir()
+        module = executable(entry=0, kind=0xFE18)
+        (self.app0 / "sce_module/present.prx").write_bytes(module)
+        report = self.probe("--module", "present.prx", "--module", "missing.prx", status=2)
+        self.assertEqual(report["modules"]["sce_module/present.prx"]["bytes"], len(module))
+        self.assertIsNone(report["modules"]["sce_module/missing.prx"])
+        self.assertEqual(set(report["errors"]), {"eboot.bin", "sce_module/missing.prx"})
+
+    def test_rejects_executable_and_empty_module_inputs(self):
+        (self.app0 / "sce_module").mkdir()
+        (self.app0 / "sce_module/executable.prx").write_bytes(executable())
+        (self.app0 / "sce_module/empty.prx").write_bytes(executable(entry=0, segment_end=0, kind=3))
+        report = self.probe("--module", "executable.prx", "--module", "empty.prx", status=2)
+        self.assertIn("expected an x86-64 ELF shared module", report["errors"]["sce_module/executable.prx"])
+        self.assertIn("no file-backed load segment", report["errors"]["sce_module/empty.prx"])
+
+    def test_module_option_requires_a_basename(self):
+        for name in ("../outside.prx", r"..\outside.prx", "outside.bin"):
+            with self.subTest(name=name):
+                result = subprocess.run([sys.executable, "-I", str(SCRIPT), str(self.app0), "--module", name],
+                                        capture_output=True, text=True, timeout=15)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn(".prx basename", result.stderr)
 
 
 if __name__ == "__main__":
