@@ -5,6 +5,7 @@ Usage:
     python3 scripts/update_progress.py                  # rewrite README.md in place
     python3 scripts/update_progress.py --check          # exit 1 if anything is stale
     python3 scripts/update_progress.py --site _site     # also build the Pages site
+    python3 scripts/update_progress.py --site _site --force  # replace a non-build _site
     python3 scripts/update_progress.py --refresh-anyps5 # re-measure the AnyPS5 submodule
 
 Two sources feed the report:
@@ -554,14 +555,41 @@ def splice(readme: str, block: str) -> str:
     return readme[:start] + block + readme[end + len(END):]
 
 
-def build_site(output: Path, data: dict) -> None:
-    if output.exists():
-        shutil.rmtree(output)
-    shutil.copytree(SITE_SOURCE, output)
-    (output / "progress.json").write_text(
+def build_site(output: Path, data: dict, force: bool = False) -> None:
+    """Copy site/ into output and write its progress data.
+
+    Building deletes whatever already exists at the target, so the target must
+    be absent, empty, or a previous build (recognised by its progress.json).
+    Targets whose deletion would destroy the checkout or the site source, and
+    unrelated non-empty directories, are refused unless force is set.
+    """
+    target = output.resolve()
+    root = ROOT.resolve()
+    source = SITE_SOURCE.resolve()
+    if target == root or target in root.parents:
+        raise SystemExit(
+            f"update_progress: refusing to build the site over {target}, which contains "
+            "the repository. Pass a new or dedicated output directory."
+        )
+    if target == source or source in target.parents:
+        raise SystemExit(
+            f"update_progress: refusing to build the site over {target}, which contains "
+            "the site source. Pass a different output directory."
+        )
+    if target.exists() and not target.is_dir():
+        raise SystemExit(f"update_progress: {target} exists and is not a directory.")
+    if target.is_dir():
+        if any(target.iterdir()) and not (target / "progress.json").is_file() and not force:
+            raise SystemExit(
+                f"update_progress: {target} is not empty and does not look like a previous "
+                "build. Pass --force to replace it."
+            )
+        shutil.rmtree(target)
+    shutil.copytree(SITE_SOURCE, target)
+    (target / "progress.json").write_text(
         json.dumps(data, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
-    print(f"Built the progress site in {output}.")
+    print(f"Built the progress site in {target}.")
 
 
 # --------------------------------------------------------------------------
@@ -573,6 +601,11 @@ def main() -> int:
         "--check", action="store_true", help="exit 1 if README.md or the snapshot is stale"
     )
     parser.add_argument("--site", type=Path, metavar="DIR", help="build the Pages site into DIR")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="with --site, replace a non-empty directory that is not a previous build",
+    )
     parser.add_argument(
         "--refresh-anyps5",
         action="store_true",
@@ -634,7 +667,7 @@ def main() -> int:
             print("README.md progress section already up to date.")
 
     if args.site:
-        build_site(args.site, site_data(phases, snapshot))
+        build_site(args.site, site_data(phases, snapshot), force=args.force)
     return 0
 
 
