@@ -118,10 +118,19 @@ Result<std::string> DriveMap::mount_point_for(char drive) const {
                  "no mount point configured for drive '" + label + "'"};
 }
 
-Result<char> DriveMap::drive_for(std::string_view posix_path) const {
-    if (posix_path.empty() || posix_path.front() != '/') {
+Result<char> DriveMap::drive_for(std::string_view raw_path) const {
+    if (raw_path.empty() || raw_path.front() != '/') {
         return Error{ErrorCode::PathInvalid, "POSIX path must be absolute"};
     }
+    // normalize_separators() would turn a backslash into a separator, but in a
+    // POSIX name it is an ordinary character, so reject it instead.
+    if (raw_path.find('\\') != std::string_view::npos) {
+        return Error{ErrorCode::PathUnsupportedForm, "POSIX path contains a literal backslash: " + quoted(raw_path)};
+    }
+
+    // Mount points are stored normalised, so compare against a normalised path.
+    const std::string normalized = normalize_separators(raw_path);
+    const std::string_view posix_path = normalized;
 
     const DriveMapping* best = nullptr;
     for (const auto& mapping : mappings_) {
@@ -145,7 +154,7 @@ Result<char> DriveMap::drive_for(std::string_view posix_path) const {
     }
 
     if (best == nullptr) {
-        return Error{ErrorCode::PathUnmappedDrive, "no mount point matches " + quoted(posix_path)};
+        return Error{ErrorCode::PathUnmappedDrive, "no mount point matches " + quoted(raw_path)};
     }
     return best->drive;
 }

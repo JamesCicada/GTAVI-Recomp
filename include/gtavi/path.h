@@ -28,13 +28,17 @@ struct DriveMapping {
 class DriveMap {
   public:
     /// Maps every drive letter to /mnt/<lowercase letter>, matching common WSL
-    /// and Wine layouts. Callers may replace individual entries.
+    /// and Wine layouts. To use a different mount for some drives, build the
+    /// map with with_mappings() and put those entries before the defaults:
+    /// the first mapping for a drive letter wins, so a later one is ignored.
     static DriveMap default_map();
 
-    /// Builds a map from explicit mappings. Drive letters are uppercased and
-    /// trailing separators are stripped from mount points. Entries with an
-    /// invalid drive letter or a non-absolute mount point are dropped.
-    /// The first valid mapping for each drive letter is kept.
+    /// Builds a map from explicit mappings. Drive letters are uppercased,
+    /// trailing separators are stripped from mount points, and repeated
+    /// separators in them are collapsed. Entries are dropped when the drive
+    /// letter is invalid or the mount point is not absolute or contains a
+    /// backslash or a NUL byte. The first valid mapping for each drive letter
+    /// is kept; later mappings for the same letter are dropped.
     static DriveMap with_mappings(std::vector<DriveMapping> mappings);
 
     /// Returns the mount point for `drive`, or ErrorCode::PathUnmappedDrive.
@@ -42,6 +46,9 @@ class DriveMap {
 
     /// Returns the drive whose mount point is the longest prefix of
     /// `posix_path` at a path boundary, or ErrorCode::PathUnmappedDrive.
+    /// Repeated separators in `posix_path` are collapsed first, as in
+    /// posix_to_windows(). A path containing a backslash is rejected with
+    /// ErrorCode::PathUnsupportedForm.
     Result<char> drive_for(std::string_view posix_path) const;
 
     const std::vector<DriveMapping>& mappings() const noexcept { return mappings_; }

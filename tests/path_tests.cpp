@@ -154,6 +154,38 @@ GTAVI_TEST(invalid_mapping_entries_are_dropped) {
     CHECK_EQ(map.mappings().size(), std::size_t{1});
 }
 
+GTAVI_TEST(overrides_placed_before_defaults_replace_them) {
+    std::vector<DriveMapping> mappings{DriveMapping{'D', "/data"}};
+    const DriveMap defaults = DriveMap::default_map();
+    for (const auto& mapping : defaults.mappings()) {
+        mappings.push_back(mapping);
+    }
+    const DriveMap map = DriveMap::with_mappings(std::move(mappings));
+    CHECK_EQ(map.mappings().size(), std::size_t{26});
+    const auto mount = map.mount_point_for('d');
+    CHECK_TRUE(mount.ok());
+    CHECK_EQ(mount.value(), std::string{"/data"});
+    const auto other = map.mount_point_for('C');
+    CHECK_TRUE(other.ok());
+    CHECK_EQ(other.value(), std::string{"/mnt/c"});
+}
+
+GTAVI_TEST(drive_for_collapses_repeated_separators) {
+    const DriveMap map = DriveMap::default_map();
+    const auto drive = map.drive_for("/mnt//d///Games");
+    CHECK_TRUE(drive.ok());
+    CHECK_EQ(drive.value(), 'D');
+    const auto root = map.drive_for("/mnt/d/");
+    CHECK_TRUE(root.ok());
+    CHECK_EQ(root.value(), 'D');
+}
+
+GTAVI_TEST(drive_for_rejects_literal_backslash) {
+    const auto drive = DriveMap::default_map().drive_for("/mnt/d/game\\content");
+    CHECK_FALSE(drive.ok());
+    CHECK_EQ(drive.error().code(), ErrorCode::PathUnsupportedForm);
+}
+
 GTAVI_TEST(duplicate_drive_keeps_the_first_mapping_in_both_directions) {
     const DriveMap map = DriveMap::with_mappings({
         DriveMapping{'D', "/local/game"},
