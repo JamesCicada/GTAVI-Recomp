@@ -111,7 +111,8 @@ Prepare the development infrastructure.
 - [x] Create development documentation. (`docs/build.md`)
 - [ ] Build AnyPS5 locally (Windows needs the MinGW-w64 GCC toolchain;
       `third_party/AnyPS5/docs/dev/BUILD.md`).
-- [ ] Build AnyPS5 at the pinned commit in CI.
+- [x] Build AnyPS5 at the pinned commit in CI. (CI job `anyps5`: relinker-only
+      mode with its test suite, `third_party/AnyPS5/docs/dev/BUILD.md`)
 
 ## Phase 4: Core Implementation
 

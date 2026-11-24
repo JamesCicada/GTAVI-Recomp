@@ -63,6 +63,34 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+  anyps5:
+    name: anyps5 relinker at the pinned commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch AnyPS5 at the pinned commit
+        # AnyPS5's own submodules are not needed for the relinker-only mode
+        # (third_party/AnyPS5/docs/dev/BUILD.md), so only the submodule
+        # itself is checked out.
+        run: git submodule update --init third_party/AnyPS5
+
+      - name: Configure
+        run: >
+          cmake -S third_party/AnyPS5 -B build-anyps5
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DANYPS5_RELINKER_ONLY=ON
+          -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build-anyps5 --parallel
+
+      - name: Test
+        run: >
+          ctest --test-dir build-anyps5 --output-on-failure
+          --timeout 120 --parallel 4 --no-tests=error
+
   app0:
     name: PS5 app0 preflight
     runs-on: ubuntu-latest
