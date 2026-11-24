@@ -27,7 +27,11 @@ void print_usage() {
         "  --to-posix <path>    translate a Windows path to a POSIX path\n"
         "  --to-windows <path>  translate a POSIX path to a Windows path\n"
         "  --mount <drive:/root> override a drive's mount for all translations\n"
-        "  -h, --help           show this message\n",
+        "  -h, --help           show this message\n"
+        "\n"
+        "Exit status: 0 on success, 2 on a usage error. When paths are given, 1 means\n"
+        "a translation failed; a host the layer cannot describe only logs a warning.\n"
+        "Without paths, 1 means the host query failed.\n",
         stderr);
 }
 
@@ -35,11 +39,19 @@ std::string to_string(std::string_view text) {
     return std::string{text};
 }
 
-int print_platform_info(gtavi::Logger& logger) {
+/// Prints host facts. A failed query is an error when host facts are what was
+/// asked for, and only a warning when the probe was asked to translate paths,
+/// so path translation stays usable on hosts the layer does not support.
+int print_platform_info(gtavi::Logger& logger, bool host_facts_requested) {
     const auto info = gtavi::query_platform_info();
     if (!info) {
-        logger.error("platform query failed: " + info.error().describe());
-        return 1;
+        const std::string message = "platform query failed: " + info.error().describe();
+        if (host_facts_requested) {
+            logger.error(message);
+            return 1;
+        }
+        logger.warn(message);
+        return 0;
     }
 
     std::printf("platform:     %s\n", to_string(gtavi::to_string(info.value().platform)).c_str());
@@ -61,9 +73,8 @@ int main(int argc, char* argv[]) {
 
     std::printf("gtavi-probe %s\n", to_string(gtavi::version_string).c_str());
 
-    int exit_code = print_platform_info(logger);
-
     if (argc == 1) {
+        const int exit_code = print_platform_info(logger, /*host_facts_requested=*/true);
         std::fputs("\npass --to-posix or --to-windows with a path to test translation\n", stderr);
         return exit_code;
     }
@@ -74,6 +85,7 @@ int main(int argc, char* argv[]) {
         const std::string_view option = argv[index];
 
         if (option == "-h" || option == "--help") {
+            const int exit_code = print_platform_info(logger, /*host_facts_requested=*/true);
             print_usage();
             return exit_code;
         }
@@ -101,6 +113,10 @@ int main(int argc, char* argv[]) {
             translations.push_back({option == "--to-posix", path});
         }
     }
+
+    // Host facts are informational here: only the translations set the exit
+    // status, unless nothing was given to translate (just --mount).
+    int exit_code = print_platform_info(logger, /*host_facts_requested=*/translations.empty());
 
     const auto defaults = gtavi::DriveMap::default_map();
     mounts.insert(mounts.end(), defaults.mappings().begin(), defaults.mappings().end());

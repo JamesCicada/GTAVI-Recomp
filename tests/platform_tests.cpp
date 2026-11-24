@@ -23,6 +23,15 @@ GTAVI_TEST(platform_names_are_stable) {
 
 GTAVI_TEST(platform_query_reports_host_facts) {
     const auto info = gtavi::query_platform_info();
+    if (gtavi::current_platform() == gtavi::Platform::Unknown) {
+        // Hosts the layer cannot describe (macOS, for example) must say so
+        // rather than report made-up facts.
+        CHECK_FALSE(info.ok());
+        if (!info.ok()) {
+            CHECK_EQ(info.error().code(), gtavi::ErrorCode::UnsupportedPlatform);
+        }
+        return;
+    }
     CHECK_TRUE(info.ok());
     if (!info.ok()) {
         return;
