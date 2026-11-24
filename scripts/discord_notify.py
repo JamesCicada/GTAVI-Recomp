@@ -85,21 +85,29 @@ def push_message(event: dict) -> dict | None:
         author = (commit.get("author") or {}).get("name", "")
         sha = commit.get("id", "")[:7]
         url = commit.get("url", "")
-        lines.append(f"[`{sha}`]({url}) {clip(subject, 120)}" + (f" · {author}" if author else ""))
+        if sha and url:
+            ref = f"[`{sha}`]({url}) "
+        elif sha:
+            ref = f"`{sha}` "
+        else:
+            ref = ""
+        lines.append(f"{ref}{clip(subject, 120)}" + (f" · {author}" if author else ""))
     if len(commits) > MAX_COMMITS:
         lines.append(f"…and {len(commits) - MAX_COMMITS} more")
 
     count = len(commits)
     branch = (event.get("ref") or "").removeprefix("refs/heads/") or "main"
+    embed_url = event.get("compare") or (event.get("repository") or {}).get("html_url", "")
     embed = {
         "title": clip(f"{count} new commit{'s' if count != 1 else ''} to {branch}", TITLE_LIMIT),
-        "url": event.get("compare") or (event.get("repository") or {}).get("html_url", ""),
         "description": clip("\n".join(lines), DESCRIPTION_LIMIT),
         "color": GREEN,
         "fields": [
             {**f, "value": clip(f["value"], FIELD_LIMIT)} for f in progress_fields()
         ],
     }
+    if embed_url:
+        embed["url"] = embed_url
     return {"embeds": [embed], "allowed_mentions": {"parse": []}}
 
 
@@ -107,16 +115,18 @@ def release_message(event: dict) -> dict | None:
     if event.get("action") not in (None, "published"):
         return None
     release = event.get("release") or {}
-    if not release:
+    if not release or release.get("draft"):
         return None
     name = release.get("name") or release.get("tag_name") or "New release"
     body = release.get("body") or ""
+    html_url = release.get("html_url", "")
     embed = {
         "title": clip(f"Release: {name}", TITLE_LIMIT),
-        "url": release.get("html_url", ""),
         "description": clip(body, 2000) if body else "See the release page for details.",
         "color": BLUE,
     }
+    if html_url:
+        embed["url"] = html_url
     return {"embeds": [embed], "allowed_mentions": {"parse": []}}
 
 
@@ -132,18 +142,19 @@ def send(url: str, payload: dict) -> None:
             print(f"Posted to Discord (HTTP {response.status}).")
     except urllib.error.HTTPError as error:
         # Never print the URL: it is a secret.
-        detail = error.read().decode("utf-8", "replace")[:500]
+        detail = error.read().decode("utf-8", "replace")[:500].replace(url, "<webhook>")
         raise SystemExit(f"discord_notify: Discord returned HTTP {error.code}: {detail}")
     except urllib.error.URLError as error:
-        raise SystemExit(f"discord_notify: could not reach Discord: {error.reason}")
+        reason = str(error.reason).replace(url, "<webhook>")
+        raise SystemExit(f"discord_notify: could not reach Discord: {reason}")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--event", required=True, choices=("push", "release"))
     parser.add_argument("--event-path", required=True, type=Path, help="GitHub event payload JSON")
     parser.add_argument("--dry-run", action="store_true", help="print the message instead of sending it")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     event = json.loads(args.event_path.read_text(encoding="utf-8"))
     payload = push_message(event) if args.event == "push" else release_message(event)
