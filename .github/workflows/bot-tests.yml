@@ -1,0 +1,29 @@
+name: Discord bot tests
+
+on:
+  pull_request:
+    paths:
+      - 'bot/**'
+      - '.github/workflows/bot-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'bot/**'
+      - '.github/workflows/bot-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  commands:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Test the Discord commands offline
+        run: |
+          python3 -m venv "$RUNNER_TEMP/bot-venv"
+          "$RUNNER_TEMP/bot-venv/bin/python" -m pip install -r bot/requirements.txt
+          "$RUNNER_TEMP/bot-venv/bin/python" -m unittest discover -s bot -v
