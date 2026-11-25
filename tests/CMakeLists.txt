@@ -16,4 +16,11 @@ if(TARGET gtavi_probe)
     COMMAND ${CMAKE_COMMAND} -DPROBE=$<TARGET_FILE:gtavi_probe> -P ${CMAKE_CURRENT_SOURCE_DIR}/probe_unicode.cmake)
   add_test(NAME gtavi_probe_mounts
     COMMAND ${CMAKE_COMMAND} -DPROBE=$<TARGET_FILE:gtavi_probe> -P ${CMAKE_CURRENT_SOURCE_DIR}/probe_mounts.cmake)
+  if(NOT CMAKE_CROSSCOMPILING AND CMAKE_HOST_SYSTEM_NAME MATCHES "^(Linux|Windows)$")
+    add_test(NAME gtavi_probe_host_release
+      COMMAND ${CMAKE_COMMAND} -DPROBE=$<TARGET_FILE:gtavi_probe> -P ${CMAKE_CURRENT_SOURCE_DIR}/probe_host_release.cmake)
+  elseif(NOT CMAKE_CROSSCOMPILING)
+    add_test(NAME gtavi_probe_unsupported_host
+      COMMAND ${CMAKE_COMMAND} -DPROBE=$<TARGET_FILE:gtavi_probe> -P ${CMAKE_CURRENT_SOURCE_DIR}/probe_unsupported_host.cmake)
+  endif()
 endif()
