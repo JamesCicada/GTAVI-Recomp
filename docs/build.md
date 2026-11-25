@@ -34,13 +34,14 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Visual Studio's generator also works and does not need `vcvars64.bat`. Omit
-`-G` to use whichever Visual Studio version is installed:
+From a plain PowerShell session, CMake can select the installed Visual Studio
+generator. Use a separate build directory so CMake can keep both generators'
+settings.
 
 ```powershell
-cmake -S . -B build -A x64
-cmake --build build --config Debug
-ctest --test-dir build -C Debug --output-on-failure
+cmake -S . -B build/vs -A x64
+cmake --build build/vs --config Debug
+ctest --test-dir build/vs -C Debug --output-on-failure
 ```
 
 ### Building the pinned AnyPS5 runtime on Windows
@@ -121,9 +122,10 @@ to recheck every source file.
 `gtavi-probe` prints host information and exercises path translation. After the
 manual Ninja build, run `./build/tools/gtavi_probe` from the repository root
 in Bash or PowerShell. With the Visual Studio Debug build, use
-`.\build\tools\Debug\gtavi_probe.exe`. For a preset or the Windows helper,
-replace `build` with the build directory it used (such as `build/ci` or
-`build/windows`).
+`.\build\vs\tools\Debug\gtavi_probe.exe`. For a preset or the Windows helper,
+look under its build directory (for example, `build/ci` or `build/windows`).
+Ninja places the executable in `tools/` and Visual Studio in
+`tools/<configuration>/`.
 
 ```console
 $ ./build/tools/gtavi_probe --to-posix "C:\Games\GTA VI\data" --to-windows /mnt/c/Games
