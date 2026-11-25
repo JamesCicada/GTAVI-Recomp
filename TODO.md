@@ -211,7 +211,8 @@ Implement the guest's major subsystems.
 - [ ] Translate the remaining gfx1013 reference instruction forms (1,484/1,560)
       and reduce the recompiler's unsupported cases.
 - [ ] Complete the graphics driver (AnyPS5 `libSceAgcDriver`: 97/167 functions).
-- [ ] Test rendering correctness.
+- [ ] Test rendering correctness. ([Offscreen Vulkan tests](docs/testing-anyps5.md#offscreen-rendering)
+      cover RGB565 targets, color write masks and depth remapping.)
 - [ ] Investigate performance overhead.
 
 ### Audio

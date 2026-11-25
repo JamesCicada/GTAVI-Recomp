@@ -1,7 +1,7 @@
 # Testing pinned AnyPS5 libraries
 
-The filesystem, audio and controller fixtures use generated files, PCM samples
-and scripted input. Each group can be built separately. The commands below were
+The fixtures use generated files, draw commands, PCM samples and scripted
+controller input. Each group can be built separately. The commands below were
 verified at AnyPS5 `1582613` on Windows x64 (MinGW-w64 GCC 15.2) and Ubuntu
 24.04 (GCC 14.2), with host-specific cases indicated below.
 
@@ -55,6 +55,23 @@ and processes, among other modes.
 cmake --build build/a5 --parallel 4 --target guest_file_lock_tests
 ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^guest_file_lock_"
 ```
+
+## Offscreen rendering
+
+Five CTests check rendered output from synthetic draws. The RGB565 test reads
+back packed texels from linear and tiled targets. Three color write mask tests
+check which channels change. The depth test checks pixel coverage before and
+after remapping the depth range.
+
+```console
+cmake --build build/a5 --parallel 4 --target agc_driver_color565_target_tests agc_driver_color_write_mask_dynamic_tests agc_driver_depth_range_remap_draw_tests
+cmake -E env ANYPS5_REQUIRE_VULKAN=1 ctest --test-dir build/a5 --no-tests=error --output-on-failure -R "^agc_driver_(color565_target|color_write_mask_dynamic(_in_pipeline|_unsuppressed)?|depth_range_remap_draw)$"
+```
+
+`ANYPS5_REQUIRE_VULKAN=1` makes a missing Vulkan device fail the test. All five
+tests passed on Windows x64 with a GeForce RTX 4060 and on Ubuntu 24.04 x64
+with Mesa 25.2.8's llvmpipe software driver. Each run checked 68 RGB565 draws
+and 28 depth-remapping cases. [Ubuntu rendering test log](https://github.com/RavenCurseBurg/GTAVI-Recomp/actions/runs/45711008085/job/139545103758)
 
 ## Audio output
 
