@@ -4,8 +4,9 @@ Thank you for your interest in contributing to the GTA VI Translation Layer.
 
 This project aims to build a translation layer that lets the PlayStation 5 build
 of Grand Theft Auto VI run natively on PC (Windows and Linux) by translating the
-system libraries it depends on. See
-[docs/adr/0002-ps5-to-pc-library-translation.md](docs/adr/0002-ps5-to-pc-library-translation.md).
+system libraries it depends on, building on AnyPS5's relinker and system
+libraries. See
+[docs/adr/0003-build-on-anyps5-relinker.md](docs/adr/0003-build-on-anyps5-relinker.md).
 
 We welcome contributions from developers, reverse engineers, researchers, testers, documentation writers, and AI-assisted development agents.
 
