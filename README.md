@@ -132,7 +132,7 @@ Individual decisions are recorded as ADRs under [docs/adr/](docs/adr/).
 | --- | --- |
 | Guest: GTA VI, PS5 build | Not tested: the game files cannot be researched yet |
 | AnyPS5 on Windows | [Full Release build verified](docs/build.md#building-the-pinned-anyps5-runtime-on-windows) at `1582613` with MinGW-w64 GCC 15.2.0. Five fixture tests passed. |
-| AnyPS5 on Linux | Supported upstream; not yet built by this project |
+| AnyPS5 on Linux | CI builds the pinned relinker. On Ubuntu 24.04, 36 [filesystem, audio and controller tests](docs/testing-anyps5.md) passed at `1582613`. |
 | This repository's tooling | Builds and tests pass on Windows (MSVC) and Linux (GCC, Clang) |
 
 Nothing here is a statement that the game currently runs.
