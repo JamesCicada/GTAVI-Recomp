@@ -412,6 +412,7 @@ def register_commands(bot: CalHampton) -> None:
         if role is None or not isinstance(member, discord.Member):
             await interaction.response.send_message("The Updates role doesn't exist on this server.", ephemeral=True)
             return
+        await interaction.response.defer(ephemeral=True, thinking=True)
         try:
             if role in member.roles:
                 await member.remove_roles(role, reason="/updates")
@@ -422,7 +423,7 @@ def register_commands(bot: CalHampton) -> None:
         except discord.Forbidden:
             LOG.warning("Missing permission to manage the %s role", UPDATES_ROLE)
             message = "I'm not allowed to change that role. A moderator needs to move my role above Updates."
-        await interaction.response.send_message(message, ephemeral=True)
+        await interaction.edit_original_response(content=message)
 
 
 def main() -> int:
