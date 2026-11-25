@@ -31,6 +31,7 @@ import json
 import os
 import re
 import sys
+import textwrap
 import time
 import urllib.error
 import urllib.request
@@ -184,7 +185,7 @@ def unwrap(text: str) -> str:
 
 
 def embeds_for(text: str, title: str) -> list[dict]:
-    """Split on blank lines into embeds of at most EMBED_LIMIT characters."""
+    """Prefer paragraph breaks and wrap paragraphs that exceed the embed limit."""
     chunks, current = [], ""
     for paragraph in text.split("\n\n"):
         candidate = f"{current}\n\n{paragraph}" if current else paragraph
@@ -193,6 +194,11 @@ def embeds_for(text: str, title: str) -> list[dict]:
             current = paragraph
         else:
             current = candidate
+        if len(current) > EMBED_LIMIT:
+            parts = textwrap.wrap(current, width=EMBED_LIMIT, expand_tabs=False,
+                                  replace_whitespace=False, drop_whitespace=False)
+            chunks.extend(parts[:-1])
+            current = parts[-1]
     chunks.append(current)
     return [
         {"title": title if i == 0 else None, "description": chunk, "color": EMBED_COLOUR}
