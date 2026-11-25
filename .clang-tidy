@@ -1,0 +1,9 @@
+Checks: >
+  -*,
+  clang-analyzer-core.*,
+  clang-analyzer-cplusplus.*,
+  clang-analyzer-unix.*,
+  bugprone-dangling-handle,
+  bugprone-use-after-move
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*'
