@@ -3,16 +3,19 @@
 // Prints host facts and exercises the path translation rules so that behaviour
 // can be compared between Windows and Linux builds.
 
+#include "gtavi/log.h"
+#include "gtavi/path.h"
+#include "gtavi/platform.h"
+#include "gtavi/version.h"
+
 #include <cstdio>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
-#include "gtavi/log.h"
-#include "gtavi/path.h"
-#include "gtavi/platform.h"
-#include "gtavi/version.h"
+#include "probe.h"
 
 namespace {
 
@@ -67,13 +70,18 @@ struct Translation {
 
 }  // namespace
 
-int main(int argc, char* argv[]) {
+int run_probe(std::span<const std::string> arguments, ProbeWriter write_text) {
     gtavi::Logger& logger = gtavi::Logger::default_logger();
-    logger.add_sink(gtavi::make_stderr_sink());
+    logger.add_sink([write_text](const gtavi::LogRecord& record) {
+        std::ostringstream message;
+        gtavi::make_stream_sink(message)(record);
+        write_text(stderr, message.str());
+        std::fflush(stderr);
+    });
 
     std::printf("gtavi-probe %s\n", to_string(gtavi::version_string).c_str());
 
-    if (argc == 1) {
+    if (arguments.empty()) {
         const int exit_code = print_platform_info(logger, /*host_facts_requested=*/true);
         std::fputs("\npass --to-posix or --to-windows with a path to test translation\n", stderr);
         return exit_code;
@@ -81,8 +89,8 @@ int main(int argc, char* argv[]) {
 
     std::vector<gtavi::DriveMapping> mounts;
     std::vector<Translation> translations;
-    for (int index = 1; index < argc; ++index) {
-        const std::string_view option = argv[index];
+    for (std::size_t index = 0; index < arguments.size(); ++index) {
+        const std::string_view option = arguments[index];
 
         if (option == "-h" || option == "--help") {
             const int exit_code = print_platform_info(logger, /*host_facts_requested=*/true);
@@ -96,12 +104,12 @@ int main(int argc, char* argv[]) {
             return 2;
         }
 
-        if (index + 1 >= argc) {
+        if (index + 1 >= arguments.size()) {
             logger.error("missing path after " + to_string(option));
             return 2;
         }
 
-        const std::string_view path = argv[++index];
+        const std::string_view path = arguments[++index];
         if (option == "--mount") {
             if (!gtavi::has_drive_designator(path) || path.size() < 3 || path[2] != '/' ||
                 path.find('\\') != std::string_view::npos) {
@@ -122,22 +130,13 @@ int main(int argc, char* argv[]) {
     mounts.insert(mounts.end(), defaults.mappings().begin(), defaults.mappings().end());
     const auto map = gtavi::DriveMap::with_mappings(std::move(mounts));
     for (const auto& [to_posix, path] : translations) {
-        if (to_posix) {
-            const auto converted = gtavi::windows_to_posix(path, map);
-            if (converted) {
-                std::printf("%s -> %s\n", to_string(path).c_str(), converted.value().c_str());
-            } else {
-                logger.error(converted.error().describe());
-                exit_code = 1;
-            }
+        const auto converted =
+            to_posix ? gtavi::windows_to_posix(path, map) : gtavi::posix_to_windows(path, map);
+        if (converted) {
+            write_text(stdout, to_string(path) + " -> " + converted.value() + '\n');
         } else {
-            const auto converted = gtavi::posix_to_windows(path, map);
-            if (converted) {
-                std::printf("%s -> %s\n", to_string(path).c_str(), converted.value().c_str());
-            } else {
-                logger.error(converted.error().describe());
-                exit_code = 1;
-            }
+            logger.error(converted.error().describe());
+            exit_code = 1;
         }
     }
 
