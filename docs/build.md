@@ -23,15 +23,10 @@ scripts\build-windows.bat Debug --clean
 It configures with `-DGTAVI_WARNINGS_AS_ERRORS=ON`, so warnings fail locally the
 same way they do in CI. It leaves the caller's environment unchanged.
 
-To drive the toolchain yourself, note that the compiler is not on `PATH` by
-default. Run the commands from a Developer PowerShell / Developer Command
-Prompt, or initialise the environment first:
-
-```powershell
-& "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
-```
-
-Then:
+To build with Ninja manually, open the [x64 Native Tools Command Prompt for VS](https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line#developer_command_prompt_shortcuts)
+from the Start menu. To use PowerShell, start `powershell` from that prompt so it
+inherits the MSVC compiler and SDK environment. In either shell, change to the
+repository root and run the following commands.
 
 ```powershell
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
@@ -123,10 +118,15 @@ to recheck every source file.
 
 ## Running the diagnostic tool
 
-`gtavi-probe` prints host information and exercises path translation:
+`gtavi-probe` prints host information and exercises path translation. After the
+manual Ninja build, run `./build/tools/gtavi_probe` from the repository root
+in Bash or PowerShell. With the Visual Studio Debug build, use
+`.\build\tools\Debug\gtavi_probe.exe`. For a preset or the Windows helper,
+replace `build` with the build directory it used (such as `build/ci` or
+`build/windows`).
 
 ```console
-$ gtavi-probe --to-posix "C:\Games\GTA VI\data" --to-windows /mnt/c/Games
+$ ./build/tools/gtavi_probe --to-posix "C:\Games\GTA VI\data" --to-windows /mnt/c/Games
 gtavi-probe 0.1.0
 platform:     windows
 os version:   10.0.26200
@@ -139,7 +139,7 @@ Use the repeatable `--mount` option to override a drive's default mount point.
 The first override for each drive applies to every translation in the command.
 
 ```console
-gtavi-probe --mount D:/games --to-posix "D:\PS5\app0" --to-windows /games/PS5/app0
+./build/tools/gtavi_probe --mount D:/games --to-posix "D:\PS5\app0" --to-windows /games/PS5/app0
 ```
 
 Include its output when reporting platform-specific bugs.
