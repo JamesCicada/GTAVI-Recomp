@@ -105,7 +105,7 @@ if defined CLEAN (
 
 echo.
 echo Configuring %CONFIG%
-cmake -S . -B "%BUILD_DIR%" %GENERATOR% -DCMAKE_BUILD_TYPE=%CONFIG% -DGTAVI_WARNINGS_AS_ERRORS=ON
+cmake -S . -B "%BUILD_DIR%" %GENERATOR% -DCMAKE_BUILD_TYPE=%CONFIG% -DGTAVI_WARNINGS_AS_ERRORS=ON -DGTAVI_BUILD_TESTS=ON
 if errorlevel 1 goto :fail
 
 echo.
@@ -115,7 +115,7 @@ if errorlevel 1 goto :fail
 
 echo.
 echo Testing
-ctest --test-dir "%BUILD_DIR%" -C %CONFIG% --output-on-failure
+ctest --test-dir "%BUILD_DIR%" -C %CONFIG% --output-on-failure --no-tests=error
 if errorlevel 1 goto :fail
 
 echo.
