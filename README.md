@@ -39,7 +39,7 @@ upstream library work in AnyPS5, tooling) continues.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="progress/roadmap-dark.svg">
-  <img src="progress/roadmap-light.svg" width="820" alt="Roadmap progress: 76 of 138 tasks done (55%), 15 blocked on game files">
+  <img src="progress/roadmap-light.svg" width="820" alt="Roadmap progress: 77 of 138 tasks done (56%), 15 blocked on game files">
 </picture>
 
 Details in [TODO.md](TODO.md).
@@ -131,7 +131,7 @@ Individual decisions are recorded as ADRs under [docs/adr/](docs/adr/).
 | Target | Status |
 | --- | --- |
 | Guest: GTA VI, PS5 build | Not tested: the game files cannot be researched yet |
-| AnyPS5 on Windows | Supported upstream (MinGW-w64 GCC); not yet built by this project |
+| AnyPS5 on Windows | [Full Release build verified](docs/build.md#building-the-pinned-anyps5-runtime-on-windows) at `1582613` with MinGW-w64 GCC 15.2.0. Five fixture tests passed. |
 | AnyPS5 on Linux | Supported upstream; not yet built by this project |
 | This repository's tooling | Builds and tests pass on Windows (MSVC) and Linux (GCC, Clang) |
 
