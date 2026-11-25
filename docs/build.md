@@ -48,6 +48,32 @@ cmake --build build --config Debug
 ctest --test-dir build -C Debug --output-on-failure
 ```
 
+### Building the pinned AnyPS5 runtime on Windows
+
+AnyPS5 uses its own CMake project and an x86-64 MinGW-w64 GCC toolchain. Start
+from a short checkout path such as `C:\g`, with WinLibs GCC 15.2.0 (POSIX
+threads, UCRT, r7), Ninja, CMake and Python on `PATH`. For toolchain setup and
+the FFmpeg package used during configuration, see the [pinned AnyPS5 build
+guide](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/docs/dev/BUILD.md#windows-setup-and-troubleshooting).
+
+Run these commands from the GTAVI-Recomp root in PowerShell.
+
+```powershell
+git submodule update --init --recursive third_party/AnyPS5
+cmake -S third_party/AnyPS5 -B build/a5 -G Ninja -DCMAKE_BUILD_TYPE=Release `
+  -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DBUILD_TESTING=ON
+cmake --build build/a5 --parallel 6
+cmake --build build/a5 --target libs --parallel 6
+$tests = '^(input_magic|file_identity|guest_filesystem|guest_file_timestamps|guest_file_vector)$'
+ctest --test-dir build/a5 -R $tests --no-tests=error --output-on-failure
+```
+
+At AnyPS5 commit `1582613`, a Release build on Windows x64 (NT 10.0.26100)
+with that toolchain, CMake 4.3.1, Ninja 1.13.2 and Python 3.14.3 produced
+413 patched `.prx` files in `build/a5/core/libs/libs`. All five selected tests
+passed using relinker and filesystem fixtures. Game compatibility remains
+untested.
+
 ## Linux
 
 ```bash

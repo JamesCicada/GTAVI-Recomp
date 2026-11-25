@@ -110,8 +110,8 @@ Prepare the development infrastructure.
 - [x] Configure CI workflows. (`.github/workflows/ci.yml`)
 - [x] Establish debugging and diagnostic tooling. (`gtavi-probe`)
 - [x] Create development documentation. (`docs/build.md`)
-- [ ] Build AnyPS5 locally (Windows needs the MinGW-w64 GCC toolchain;
-      `third_party/AnyPS5/docs/dev/BUILD.md`).
+- [x] Build AnyPS5 locally. ([Windows Release build and five fixture tests](docs/build.md#building-the-pinned-anyps5-runtime-on-windows)
+      at `1582613`, including the `libs` target.)
 - [x] Build AnyPS5 at the pinned commit in CI. (CI job `anyps5`: relinker-only
       mode with its test suite, `third_party/AnyPS5/docs/dev/BUILD.md`)
 

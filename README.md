@@ -131,7 +131,7 @@ Individual decisions are recorded as ADRs under [docs/adr/](docs/adr/).
 | Target | Status |
 | --- | --- |
 | Guest: GTA VI, PS5 build | Not tested: the game files cannot be researched yet |
-| AnyPS5 on Windows | Supported upstream (MinGW-w64 GCC); not yet built by this project |
+| AnyPS5 on Windows | [Full Release build verified](docs/build.md#building-the-pinned-anyps5-runtime-on-windows) at `1582613` with MinGW-w64 GCC 15.2.0. Five fixture tests passed. |
 | AnyPS5 on Linux | Supported upstream; not yet built by this project |
 | This repository's tooling | Builds and tests pass on Windows (MSVC) and Linux (GCC, Clang) |
 
