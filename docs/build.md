@@ -69,6 +69,24 @@ ctest --preset debug
 The `ci` preset enables `-DGTAVI_WARNINGS_AS_ERRORS=ON`, matching the workflow in
 `.github/workflows/ci.yml`. Builds must be warning-free with that setting.
 
+## Static analysis
+
+The Linux Clang job runs clang-tidy while compiling the core library, probe and
+tests. Enabled checks detect errors such as dangling string views and uses of
+moved-from objects. Diagnostics fail the build. See [`.clang-tidy`](../.clang-tidy).
+
+With Clang, clang-tidy and Ninja installed, run the same checks on Linux with
+these commands.
+
+```bash
+CXX=clang++ cmake --preset ci -B build/tidy -DCMAKE_CXX_CLANG_TIDY=clang-tidy
+cmake --build build/tidy
+ctest --test-dir build/tidy --output-on-failure
+```
+
+After changing only `.clang-tidy`, use `cmake --build build/tidy --clean-first`
+to recheck every source file.
+
 ## Options
 
 | Option | Default | Purpose |

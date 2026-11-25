@@ -41,9 +41,11 @@ jobs:
           - compiler: gcc
             cc: gcc
             cxx: g++
+            clang_tidy: ''
           - compiler: clang
             cc: clang
             cxx: clang++
+            clang_tidy: clang-tidy
     env:
       CC: ${{ matrix.cc }}
       CXX: ${{ matrix.cxx }}
@@ -56,6 +58,7 @@ jobs:
           -G Ninja
           -DCMAKE_BUILD_TYPE=Release
           -DGTAVI_WARNINGS_AS_ERRORS=ON
+          -DCMAKE_CXX_CLANG_TIDY=${{ matrix.clang_tidy }}
 
       - name: Build
         run: cmake --build build --parallel

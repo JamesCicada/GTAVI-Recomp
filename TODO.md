@@ -104,7 +104,8 @@ Prepare the development infrastructure.
 - [x] Configure Windows development builds. (MSVC 19.51, verified locally)
 - [x] Configure Linux development builds. (CI: GCC and Clang)
 - [x] Set up automated compilation.
-- [ ] Configure static analysis and formatting. (formatting configured; static analysis pending)
+- [x] Configure static analysis and formatting. (`.clang-tidy` in the Linux
+      Clang CI build and `.clang-format` for formatting)
 - [x] Integrate unit testing. (`tests/`, CTest, 53 cases)
 - [x] Configure CI workflows. (`.github/workflows/ci.yml`)
 - [x] Establish debugging and diagnostic tooling. (`gtavi-probe`)
