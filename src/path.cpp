@@ -192,13 +192,6 @@ Result<std::string> windows_to_posix(std::string_view windows_path, const DriveM
         }
 
         std::string out = mount_point.value();
-        while (!out.empty() && out.back() == '/') {
-            out.pop_back();
-        }
-        if (out.empty()) {
-            out = "/";
-        }
-
         const std::string normalized = normalize_separators(remainder);
         if (normalized != "/") {
             if (out == "/") {

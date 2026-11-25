@@ -210,6 +210,13 @@ GTAVI_TEST(root_mount_point_is_supported) {
     CHECK_EQ(result.value(), std::string{"/Games"});
 }
 
+GTAVI_TEST(drive_root_on_a_slash_only_mount_stays_at_posix_root) {
+    const DriveMap map = DriveMap::with_mappings({DriveMapping{'R', "///"}});
+    const auto result = windows_to_posix("R:\\", map);
+    CHECK_TRUE(result.ok());
+    CHECK_EQ(result.value(), std::string{"/"});
+}
+
 // --- posix_to_windows -------------------------------------------------------
 
 GTAVI_TEST(mount_point_becomes_drive_root) {
