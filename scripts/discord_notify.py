@@ -96,10 +96,13 @@ def push_message(event: dict) -> dict | None:
         lines.append(f"…and {len(commits) - MAX_COMMITS} more")
 
     count = len(commits)
-    branch = (event.get("ref") or "").removeprefix("refs/heads/") or "main"
+    branch = event.get("ref") or ""
+    heads_prefix = "refs/heads/"
+    if branch.startswith(heads_prefix):
+        branch = branch[len(heads_prefix):]
     embed_url = event.get("compare") or (event.get("repository") or {}).get("html_url", "")
     embed = {
-        "title": clip(f"{count} new commit{'s' if count != 1 else ''} to {branch}", TITLE_LIMIT),
+        "title": clip(f"{count} new commit{'s' if count != 1 else ''} to {branch or 'main'}", TITLE_LIMIT),
         "description": clip("\n".join(lines), DESCRIPTION_LIMIT),
         "color": GREEN,
         "fields": [

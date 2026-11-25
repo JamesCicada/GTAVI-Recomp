@@ -22,7 +22,9 @@ images), and with --site the Pages data.
   AnyPS5's tools/progress.py. --refresh-anyps5 rewrites it and needs the
   submodule checked out; nothing else does, so CI can run without it.
 
-Standard library only, so it runs anywhere Python 3.8+ does.
+Generating and checking reports from the committed snapshot needs only the
+Python 3.8+ standard library. Refreshing the snapshot also needs a Python
+version supported by the pinned AnyPS5 measurement tool.
 """
 
 from __future__ import annotations
@@ -75,6 +77,12 @@ CORE_LIBRARIES = (
 
 PHASE_RE = re.compile(r"^## Phase (\d+): (.+?)\s*$")
 ITEM_RE = re.compile(r"^- \[([ xX])\] ")
+
+
+def write_utf8(path: Path, text: str) -> None:
+    """Write generated files with LF line endings on every host."""
+    with path.open("w", encoding="utf-8", newline="\n") as out:
+        out.write(text)
 
 
 # --------------------------------------------------------------------------
@@ -230,7 +238,7 @@ def refresh_snapshot() -> None:
         "core_libraries": core,
     }
     SNAPSHOT.parent.mkdir(parents=True, exist_ok=True)
-    SNAPSHOT.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8", newline="\n")
+    write_utf8(SNAPSHOT, json.dumps(snapshot, indent=2) + "\n")
     print(f"Wrote {SNAPSHOT.relative_to(ROOT).as_posix()} for AnyPS5 {commit[:7]}.")
 
 
@@ -586,9 +594,7 @@ def build_site(output: Path, data: dict, force: bool = False) -> None:
             )
         shutil.rmtree(target)
     shutil.copytree(SITE_SOURCE, target)
-    (target / "progress.json").write_text(
-        json.dumps(data, indent=2) + "\n", encoding="utf-8", newline="\n"
-    )
+    write_utf8(target / "progress.json", json.dumps(data, indent=2) + "\n")
     print(f"Built the progress site in {target}.")
 
 
@@ -658,10 +664,10 @@ def main() -> int:
         for path, content in svgs.items():
             if not path.is_file() or path.read_text(encoding="utf-8") != content:
                 path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(content, encoding="utf-8", newline="\n")
+                write_utf8(path, content)
                 print(f"Updated {path.relative_to(ROOT).as_posix()}.")
         if updated != current:
-            README.write_text(updated, encoding="utf-8", newline="\n")
+            write_utf8(README, updated)
             print("Updated README.md progress section.")
         else:
             print("README.md progress section already up to date.")
