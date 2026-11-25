@@ -24,6 +24,13 @@ cmake --build build/a5 --parallel 4 --target guest_filesystem_tests guest_file_t
 ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^(guest_filesystem|guest_file_timestamps|guest_file_vector|download_data_mount_.*)$"
 ```
 
+For a Linux leak check, add `-DANYPS5_ENABLE_ASAN=ON` when configuring
+AnyPS5, rebuild the four targets above, and run the same CTest command with
+`ASAN_OPTIONS=detect_leaks=1`. On glibc hosts, use a version that includes
+the [`freopen` fix](https://github.com/bminor/glibc/commit/9c0d6f7a1046aba111e25e34ec07242853e859dc).
+On Ubuntu 24.04 with glibc `2.39-0ubuntu8.12`, LeakSanitizer reported a
+472-byte allocation in the directory-reopen case of `guest_filesystem`.
+
 On Windows, seven additional file-lock cases cover contention between threads
 and processes, among other modes.
 
