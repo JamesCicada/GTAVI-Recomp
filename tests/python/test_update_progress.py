@@ -211,9 +211,9 @@ class TestBuildSite(unittest.TestCase):
         target = self.tmp / "out"
         progress.build_site(target, self.data)
         self.assertTrue((target / "index.html").is_file())
-        self.assertEqual(
-            json.loads((target / "progress.json").read_text(encoding="utf-8")), self.data
-        )
+        report = (target / "progress.json").read_bytes()
+        self.assertNotIn(b"\r\n", report)
+        self.assertEqual(json.loads(report.decode("utf-8")), self.data)
 
     def test_rebuilds_a_previous_build(self) -> None:
         target = self.tmp / "out"
