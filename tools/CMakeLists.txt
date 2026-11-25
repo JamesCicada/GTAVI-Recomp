@@ -1,3 +1,12 @@
 add_executable(gtavi_probe probe/main.cpp)
+if(WIN32)
+  target_sources(gtavi_probe PRIVATE ../src/platform/probe_windows.cpp)
+  if(MINGW)
+    target_link_options(gtavi_probe PRIVATE -municode)
+  endif()
+else()
+  target_sources(gtavi_probe PRIVATE probe/entry.cpp)
+endif()
+target_include_directories(gtavi_probe PRIVATE probe)
 
 target_link_libraries(gtavi_probe PRIVATE gtavi::core gtavi_warnings)

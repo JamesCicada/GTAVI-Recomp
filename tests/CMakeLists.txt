@@ -12,6 +12,8 @@ target_link_libraries(gtavi_tests PRIVATE gtavi::core gtavi_warnings)
 add_test(NAME gtavi_tests COMMAND gtavi_tests)
 
 if(TARGET gtavi_probe)
+  add_test(NAME gtavi_probe_unicode
+    COMMAND ${CMAKE_COMMAND} -DPROBE=$<TARGET_FILE:gtavi_probe> -P ${CMAKE_CURRENT_SOURCE_DIR}/probe_unicode.cmake)
   add_test(NAME gtavi_probe_mounts
     COMMAND ${CMAKE_COMMAND} -DPROBE=$<TARGET_FILE:gtavi_probe> -P ${CMAKE_CURRENT_SOURCE_DIR}/probe_mounts.cmake)
 endif()
