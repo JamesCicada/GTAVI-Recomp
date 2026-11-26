@@ -79,14 +79,14 @@ bool has_drive_designator(std::string_view windows_path) noexcept {
 }
 
 DriveMap DriveMap::default_map() {
-    std::vector<DriveMapping> mappings;
-    mappings.reserve(26);
+    DriveMap map;
+    map.mappings_.reserve(26);
     for (char letter = 'A'; letter <= 'Z'; ++letter) {
         std::string mount_point = "/mnt/";
         mount_point.push_back(static_cast<char>(letter - 'A' + 'a'));
-        mappings.push_back(DriveMapping{letter, std::move(mount_point)});
+        map.mappings_.push_back(DriveMapping{letter, std::move(mount_point)});
     }
-    return with_mappings(std::move(mappings));
+    return map;
 }
 
 DriveMap DriveMap::with_mappings(std::vector<DriveMapping> mappings) {
