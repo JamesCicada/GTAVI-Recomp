@@ -35,6 +35,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
@@ -176,9 +177,26 @@ def counts(done: int, total: int) -> dict:
     return {"done": done, "total": total}
 
 
+def measure_anyps5(commit: str) -> dict:
+    # Run both the tool and its scan on committed files. The contributor's
+    # checkout may contain staged edits or additional library directories.
+    with tempfile.TemporaryDirectory(prefix="gtavi-anyps5-") as tmp:
+        source = Path(tmp)
+        git("clone", "--quiet", "--shared", "--no-checkout", "--", str(ANYPS5), tmp)
+        git("-C", tmp, "checkout", "--quiet", "--detach", commit)
+        result = subprocess.run(
+            [sys.executable, "-I", str(source / "tools" / "progress.py"), "--json", "--require-shader-source"],
+            cwd=source,
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+    return json.loads(result.stdout)
+
+
 def refresh_snapshot() -> None:
-    tool = ANYPS5 / "tools" / "progress.py"
-    if not tool.is_file():
+    if not (ANYPS5 / ".git").exists():
         raise SystemExit(
             "update_progress: AnyPS5 is not checked out. "
             "Run: git submodule update --init third_party/AnyPS5"
@@ -192,15 +210,7 @@ def refresh_snapshot() -> None:
         )
 
     print("Measuring AnyPS5 with its tools/progress.py (this takes a few seconds)...")
-    result = subprocess.run(
-        [sys.executable, "-I", str(tool), "--json", "--require-shader-source"],
-        cwd=ANYPS5,
-        check=True,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-    )
-    data = json.loads(result.stdout)
+    data = measure_anyps5(commit)
 
     groups = {g["name"]: g for g in data["libraries"]["groups"]}
     core = []
