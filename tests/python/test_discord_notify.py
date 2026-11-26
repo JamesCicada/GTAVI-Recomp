@@ -162,6 +162,47 @@ class TestReleaseMessage(unittest.TestCase):
 
 
 class TestSendAndCli(unittest.TestCase):
+    def test_send_waits_for_discord_before_retrying_the_same_payload(self) -> None:
+        url = "https://example.invalid/webhook"
+        payload = {"content": "release"}
+        for headers, body, delay in [
+            ({"Retry-After": "2"}, b"rate limited", 2),
+            ({}, b'{"retry_after":0.25}', 0.25),
+        ]:
+            with self.subTest(headers=headers):
+                limited = urllib.error.HTTPError(url, 429, "Too Many Requests", headers, io.BytesIO(body))
+                response = mock.MagicMock()
+                response.__enter__.return_value.status = 204
+                with mock.patch("urllib.request.urlopen", side_effect=[limited, response]) as http, \
+                     mock.patch("time.sleep") as sleep:
+                    notify.send(url, payload)
+                sleep.assert_called_once_with(delay)
+                self.assertEqual(http.call_count, 2)
+                self.assertEqual([json.loads(call.args[0].data) for call in http.call_args_list],
+                                 [payload, payload])
+
+    def test_send_stops_after_repeated_rate_limits(self) -> None:
+        url = "https://example.invalid/webhook"
+        errors = [urllib.error.HTTPError(url, 429, "Too Many Requests", {"Retry-After": "1"},
+                                         io.BytesIO(b"rate limited")) for _ in range(3)]
+        with mock.patch("urllib.request.urlopen", side_effect=errors) as http, mock.patch("time.sleep") as sleep:
+            with self.assertRaisesRegex(SystemExit, "HTTP 429"):
+                notify.send(url, {})
+        self.assertEqual(http.call_count, 3)
+        self.assertEqual(sleep.call_args_list, [mock.call(1), mock.call(1)])
+
+    def test_send_reports_unusable_or_long_delays_without_retrying(self) -> None:
+        for body in (b'{}', b'null', b'not JSON', b'{"retry_after":false}', b'{"retry_after":-1}',
+                     b'{"retry_after":3600}'):
+            with self.subTest(body=body):
+                url = "https://example.invalid/webhook"
+                error = urllib.error.HTTPError(url, 429, "Too Many Requests", {}, io.BytesIO(body))
+                with mock.patch("urllib.request.urlopen", side_effect=error) as http, mock.patch("time.sleep") as sleep:
+                    with self.assertRaisesRegex(SystemExit, "HTTP 429"):
+                        notify.send(url, {})
+                http.assert_called_once()
+                sleep.assert_not_called()
+
     def test_send_redacts_webhook_url_on_http_and_url_errors(self) -> None:
         secret = "https://discord.com/api/webhooks/12345/SUPER_SECRET_TOKEN"
         http_err = urllib.error.HTTPError(

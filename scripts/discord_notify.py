@@ -23,6 +23,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -35,6 +36,8 @@ USER_AGENT = "DiscordBot (https://github.com/JamesCicada/GTAVI-Recomp, 1.0)"
 GREEN = 0x2EA043
 BLUE = 0x2F81F7
 MAX_COMMITS = 10
+MAX_ATTEMPTS = 3
+MAX_RETRY_SECONDS = 60
 
 # Discord embed limits.
 TITLE_LIMIT = 256
@@ -133,6 +136,18 @@ def release_message(event: dict) -> dict | None:
     return {"embeds": [embed], "allowed_mentions": {"parse": []}}
 
 
+def retry_delay(header: str | None, body: str) -> float | None:
+    """Discord supplies seconds in Retry-After or the JSON retry_after field."""
+    try:
+        value = header if header is not None else json.loads(body)["retry_after"]
+        if isinstance(value, bool):
+            return None
+        seconds = float(value)
+    except (ValueError, TypeError, KeyError, OverflowError):
+        return None
+    return seconds if 0 <= seconds <= MAX_RETRY_SECONDS else None
+
+
 def send(url: str, payload: dict) -> None:
     request = urllib.request.Request(
         url,
@@ -140,16 +155,25 @@ def send(url: str, payload: dict) -> None:
         headers={"Content-Type": "application/json", "User-Agent": USER_AGENT},
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(request, timeout=20) as response:
-            print(f"Posted to Discord (HTTP {response.status}).")
-    except urllib.error.HTTPError as error:
-        # Never print the URL: it is a secret.
-        detail = error.read().decode("utf-8", "replace")[:500].replace(url, "<webhook>")
-        raise SystemExit(f"discord_notify: Discord returned HTTP {error.code}: {detail}")
-    except urllib.error.URLError as error:
-        reason = str(error.reason).replace(url, "<webhook>")
-        raise SystemExit(f"discord_notify: could not reach Discord: {reason}")
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=20) as response:
+                print(f"Posted to Discord (HTTP {response.status}).")
+            return
+        except urllib.error.HTTPError as error:
+            with error:
+                body = error.read().decode("utf-8", "replace")
+            if error.code == 429 and attempt < MAX_ATTEMPTS:
+                delay = retry_delay(error.headers.get("Retry-After"), body)
+                if delay is not None:
+                    time.sleep(delay)
+                    continue
+            # Never print the URL: it is a secret.
+            detail = body.replace(url, "<webhook>")[:500]
+            raise SystemExit(f"discord_notify: Discord returned HTTP {error.code}: {detail}")
+        except urllib.error.URLError as error:
+            reason = str(error.reason).replace(url, "<webhook>")
+            raise SystemExit(f"discord_notify: could not reach Discord: {reason}")
 
 
 def main(argv: list[str] | None = None) -> int:
