@@ -145,7 +145,7 @@ provide identically?
 | Thread priorities and affinity | `scePthread*` API | `libkernel/Pthread` on host threads | Reported |
 | Timing and clocks | GTA VI's timing requirements are unknown | The realtime and monotonic clocks report 81 ns resolution. The separate CPU mode query (`sceKernelGetCpumode`) returns 0 at the pin. | [Confirmed for the clock fixtures](../testing-anyps5.md#guest-clocks) |
 | Synchronisation primitives | Mutexes, semaphores, condition variables | `libkernel`; some attributes accepted and ignored (debt: silent stubs) | Reported |
-| Thread cancellation | Deferred and asynchronous cancellation | Deferred requests handled; asynchronous cases unverified (`docs/dev/ARCHITECTURE.md`) | Reported |
+| Thread cancellation | GTA VI's cancellation points are unknown | A blocked guest POSIX nanosleep is cancellable. A pending request in asynchronous mode takes effect when the worker re-enables cancellation. | [Confirmed for the cancellation fixtures](../testing-anyps5.md#thread-cancellation) |
 
 ## 4. Filesystem and mount points
 

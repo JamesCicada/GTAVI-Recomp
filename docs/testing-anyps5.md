@@ -47,6 +47,25 @@ cmake --build build/a5 --parallel 4 --target guest_kernel_clock_tests guest_free
 ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^(guest_kernel_clock|guest_freebsd_clocks)$"
 ```
 
+## Thread cancellation
+
+A cancellation request interrupts a blocked guest POSIX `nanosleep` and runs
+one cleanup handler. With cancellation disabled, the sleep returns normally
+and the worker handles the pending request after re-enabling cancellation.
+For `sceKernelNanosleep`, the fixture checks that the requested one-second
+interval elapses before cancellation unwinds the call.
+[Sleep fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/tests/GuestSleepCancel.cpp)
+
+The pthread fixture selects asynchronous mode while cancellation is disabled.
+The worker receives a pending request and joins as cancelled when it re-enables
+cancellation. Delivery during uninterrupted computation remains unverified.
+[Pthread fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/tests/GuestPthreadCancel.cpp)
+
+```console
+cmake --build build/a5 --parallel 4 --target guest_pthread_cancel_tests guest_sleep_cancel_tests
+ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^(guest_pthread_cancel|guest_sleep_cancel_(nanosleep_(blocked|disabled)|sce_nanosleep_deferred))$"
+```
+
 ## Filesystem
 
 Three tests exercise file and directory operations, timestamps and vectored I/O.
