@@ -2,7 +2,7 @@
 
 - **Status:** In progress — filled from public sources and AnyPS5; GTA VI-specific findings blocked
 - **Owner:** unassigned
-- **Last updated:** 2026-11-21
+- **Last updated:** 2026-11-26
 
 This document is the deliverable for Phase 1 of `TODO.md`. It records what has
 been *observed* about the PS5 build and the host platforms, not what is assumed.
@@ -200,8 +200,25 @@ Answers to the earlier open questions:
 | Field | Value | Confidence | Evidence |
 | --- | --- | --- | --- |
 | Input API | `libScePad` (56 / 222 functions implemented) | Reported | AnyPS5 progress scan |
-| Device features used | Rumble supported; DualSense haptic audio approximated as rumble; adaptive triggers unverified | Reported | `TechnicalDebt.md`, `libScePad` sources |
+| Adaptive-trigger commands | Guest L2 and R2 requests produce separate effect blocks. The fixture checks zone strengths and the effect restored after re-enabling triggers. | Confirmed | [Guest pad trigger fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/tests/GuestPadTriggerEffects.cpp) |
+| Bluetooth DualSense haptic audio | The haptics buffer converts generated PCM to 3 kHz samples. The fixture checks the report bytes, checksum and scheduled intervals between reports. | Confirmed | [DualSense haptics fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceVideoOut/tests/DualSenseHaptics.cpp) |
 | Host backend | SDL2 game controllers, plus keyboard and mouse mapping | Reported | `docs/user/INPUT_MAPPING.md` |
+
+At the pinned revision `1582613`, the host sends adaptive triggers through SDL
+for PS5 controllers. Alongside motor rumble, it has a separate Bluetooth HID
+output path for DualSense haptic audio. [Trigger and rumble dispatch](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceVideoOut/src/PadInput.cpp#L329-L398) · [Bluetooth haptics output](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceVideoOut/src/PadInput.cpp#L225-L269)
+
+From the GTAVI-Recomp root, configure `third_party/AnyPS5` in `build/a5` with
+`BUILD_TESTING=ON`, then build and run the two fixtures. [Pinned build requirements](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/docs/dev/BUILD.md#requirements)
+
+```console
+cmake --build build/a5 --parallel 4 --target guest_pad_trigger_effects_tests dualsense_haptics_tests
+ctest --test-dir build/a5 --no-tests=error --output-on-failure -R "^(guest_pad_trigger_effects|dualsense_haptics)$"
+```
+
+Both fixtures passed on Windows x64 and Ubuntu 24.04 x64 using in-memory data.
+Physical trigger resistance, vibration fidelity and GTA VI's use of either
+feature remain unverified by this project. [Ubuntu fixture output](https://github.com/RavenCurseBurg/GTAVI-Recomp/actions/runs/45725866198/job/139595455924)
 
 ## 8. Networking and online services
 

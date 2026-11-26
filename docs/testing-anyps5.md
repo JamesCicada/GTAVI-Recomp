@@ -110,3 +110,6 @@ axes and triggers.
 cmake --build build/a5 --parallel 4 --target guest_pad_recording_tests
 ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^guest_pad_recording$"
 ```
+
+For controller output, the [Phase 1 input findings](research/phase-1-research-report.md#7-input)
+give the two tests for adaptive-trigger commands and Bluetooth DualSense haptic reports.

@@ -229,8 +229,9 @@ Implement the guest's major subsystems.
 - [x] Implement basic controller input. (AnyPS5: `libScePad` on SDL2, with
       keyboard and mouse mapping)
 - [ ] Complete the controller library (56/222 functions).
-- [ ] Implement haptics and adaptive triggers where feasible. (AnyPS5 has rumble;
-      adaptive triggers unverified)
+- [ ] Implement haptics and adaptive triggers where feasible.
+      [Output report tests](docs/research/phase-1-research-report.md#7-input)
+      cover both features at the pin. Physical controller output remains unverified.
 - [x] Test input behaviour. ([AnyPS5 controller fixtures](docs/testing-anyps5.md#controller-input)
       exercise command files, scripted input and recorded controller state.)
 
