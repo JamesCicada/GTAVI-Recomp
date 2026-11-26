@@ -175,7 +175,7 @@ translation target?
 | API family | AGC (`libSceAgc`, `libSceAgcDriver`) | Reported | `core/libs/prx/libSceAgc*` |
 | Command buffer format | APR and AMM command buffers | Reported | `docs/dev/ARCHITECTURE.md`, "APR and AMM command buffers" |
 | Shader format | AMD RDNA-family GPU machine code; AnyPS5 tracks RDNA 2 and gfx1013 references | Reported | `docs/dev/PROGRESS.md` |
-| Synchronisation model | _not reviewed_ | Unverified | |
+| Synchronisation model | The pinned Vulkan recorder can omit a barrier already covered by an earlier one. The tested cases retain image layout transitions, queue-family ownership transfers and barriers for host reads. | Confirmed for the recorder's barrier decisions | [Vulkan barrier batching](../testing-anyps5.md#vulkan-barrier-batching) |
 | Translation target | Vulkan; shaders recompiled to SPIR-V | Reported | `libSceAgcDriver/Execution/src/VulkanDevice.cpp`, `core/shader/recompiler` |
 
 Answers to the earlier open questions:

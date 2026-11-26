@@ -108,6 +108,22 @@ tests passed on Windows x64 with a GeForce RTX 4060 and on Ubuntu 24.04 x64
 with Mesa 25.2.8's llvmpipe software driver. Each run checked 68 RGB565 draws
 and 28 depth-remapping cases. [Ubuntu rendering test log](https://github.com/RavenCurseBurg/GTAVI-Recomp/actions/runs/45711008085/job/139545103758)
 
+## Vulkan barrier batching
+
+This CPU-only test exercises the Vulkan recorder's barrier decisions. In one
+case, the barrier at the end of a render pass already covers the stages and
+accesses needed for a subsequent label write. Other cases require the recorder
+to keep a barrier when an image changes layout, ownership moves between queue
+families, or the destination includes the host stage for a read. The fixture
+checks these decisions using stage and access masks.
+[Barrier cases](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceAgcDriver/tests/BarrierBatch.cpp)
+and [recorder implementation](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceAgcDriver/Graphics/src/Recorder.cpp#L2604-L2612).
+
+```console
+cmake --build build/a5 --parallel 4 --target agc_barrier_batch_tests
+ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^agc_barrier_batch$"
+```
+
 ## Display status on Linux
 
 Two VideoOut fixtures open a display using synthetic application metadata.
