@@ -219,6 +219,22 @@ cmake --build build/a5 --parallel 4 --target audio_out_buffer_size_tests audio_o
 ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^(audio_out_buffer_size_pass_through|audio_out2_port_layouts)$"
 ```
 
+### Audio3d mixing and queuing
+
+The mixer preserves both frames of a centred stereo signal. With hard-right
+pan, the input pair `[10000, 20000]` produces `[0, 19999]`. The guest port
+test queues a silent frame, writes four stereo PCM frames to a bed, then
+advances the port again. The two queue entries fill the port. A synchronous
+push drains both entries. These tests cover the mixer output and the guest
+queue. Spatial rendering on physical speakers remains unverified.
+[Mixer samples](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/tests/GuestAudio3dMixer.cpp)
+and [port queue checks](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/tests/GuestAudio3dPort.cpp).
+
+```console
+cmake --build build/a5 --parallel 4 --target guest_audio3d_mixer_tests guest_audio3d_port_tests
+ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^guest_audio3d_(mixer|port)$"
+```
+
 ## Controller input
 
 These three fixtures exercise command-file input, timed button and stick events,
