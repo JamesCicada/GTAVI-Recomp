@@ -94,9 +94,11 @@ ping anyone, whatever a commit message contains.
    python scripts/discord_setup.py
    ```
 
-4. If the plan looks right, apply it. Add `--webhooks` to also create the
-   `#progress` and `#announcements` webhooks; their URLs are printed once for the
-   GitHub secrets:
+4. If the plan looks right, apply it. Add `--webhooks` to set up the
+   `#progress` and `#announcements` webhooks. The script prints each newly
+   created URL once for the corresponding GitHub secret. On later runs it
+   reuses the `GTAVI-Recomp` webhook created by the same bot in each channel.
+   You can copy an existing URL from the channel's **Integrations → Webhooks**.
 
    ```powershell
    python scripts/discord_setup.py --apply --webhooks

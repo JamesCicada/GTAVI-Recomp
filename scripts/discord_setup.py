@@ -105,6 +105,7 @@ LAYOUT = [
 # channel -> heading in docs/community/discord.md whose blockquote is posted there.
 MESSAGES = {"welcome": "Welcome message", "rules": "Rules", "faq": "FAQ"}
 WEBHOOK_CHANNELS = {"progress": "DISCORD_WEBHOOK_PROGRESS", "announcements": "DISCORD_WEBHOOK_ANNOUNCEMENTS"}
+WEBHOOK_NAME = "GTAVI-Recomp"
 EMBED_COLOUR = 0x2F81F7
 EMBED_LIMIT = 4096
 
@@ -208,6 +209,23 @@ def embeds_for(text: str, title: str) -> list[dict]:
 
 # --------------------------------------------------------------------------
 # Plan and apply
+
+
+def setup_webhook(api: Discord, channel_name: str, channel: dict | None, bot_id: str,
+                  secret: str, apply: bool) -> None:
+    path = f"/channels/{channel['id']}/webhooks" if channel is not None else None
+    if path:
+        hooks = api.call("GET", path)
+        if any(hook["type"] == 1 and hook["name"] == WEBHOOK_NAME
+               and (hook.get("user") or {}).get("id") == bot_id for hook in hooks):
+            print(f"  #{channel_name}: the bot's {WEBHOOK_NAME} webhook already exists")
+            return
+
+    print(f"+ webhook for #{channel_name} -> GitHub secret {secret}")
+    if apply and path:
+        hook = api.call("POST", path, {"name": WEBHOOK_NAME})
+        print(f"    {secret} = https://discord.com/api/webhooks/{hook['id']}/{hook['token']}")
+        print("    Save this URL in GitHub secrets, then clear this terminal.")
 
 
 def main() -> int:
@@ -353,13 +371,7 @@ def main() -> int:
     # Webhooks
     if args.webhooks:
         for channel_name, secret in WEBHOOK_CHANNELS.items():
-            channel = created.get(channel_name)
-            print(f"+ webhook for #{channel_name} -> GitHub secret {secret}")
-            if apply and channel:
-                hook = api.call("POST", f"/channels/{channel['id']}/webhooks", {"name": "GTAVI-Recomp"})
-                print(f"    {secret} = https://discord.com/api/webhooks/{hook['id']}/{hook['token']}")
-        if apply:
-            print("\nThe webhook URLs above are secrets: add them to GitHub, then clear this terminal.")
+            setup_webhook(api, channel_name, created.get(channel_name), me["id"], secret, apply)
 
     print("\nDone." if apply else "\nPlan only. Rerun with --apply to make these changes.")
     return 0
