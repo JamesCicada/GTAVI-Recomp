@@ -16,7 +16,8 @@ images), and with --site the Pages data.
 
 * TODO.md. Each "## Phase N: Title" heading is one row. A "- [x]" item is done,
   a "- [ ]" item is open, and an open item whose text contains BLOCKED_MARKER
-  is counted as blocked until the game files can be researched.
+  is counted as blocked until the game files can be researched. Fenced code
+  examples are excluded from these counts.
 * progress/anyps5.json, a snapshot of AnyPS5's own measurements (shader
   recompiler and system libraries) taken at the pinned submodule commit by
   AnyPS5's tools/progress.py. --refresh-anyps5 rewrites it and needs the
@@ -35,6 +36,7 @@ import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Iterator
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
@@ -77,6 +79,8 @@ CORE_LIBRARIES = (
 
 PHASE_RE = re.compile(r"^## Phase (\d+): (.+?)\s*$")
 ITEM_RE = re.compile(r"^- \[([ xX])\] ")
+FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
+LIST_MARKER_RE = re.compile(r"^ {0,3}(?:[-+*]|[0-9]{1,9}[.)])( +)")
 
 
 def write_utf8(path: Path, text: str) -> None:
@@ -102,6 +106,35 @@ class Phase:
         return self.done + self.open + self.blocked
 
 
+def roadmap_lines(text: str) -> Iterator[str]:
+    """Yield roadmap prose, skipping literal examples inside fenced code blocks."""
+    fence = ""
+    list_indent = 0
+    for line in text.splitlines():
+        expanded = line.expandtabs(4)
+        if list_indent and expanded.strip() and not expanded.startswith(" " * list_indent):
+            # An unclosed fence inside a list item ends with the item.
+            list_indent = 0
+            fence = ""
+        marker = LIST_MARKER_RE.match(expanded) if not fence and not list_indent else None
+        if marker:
+            # Five or more spaces after a marker start indented content.
+            padding = len(marker[1])
+            list_indent = marker.start(1) + (padding if padding <= 4 else 1)
+
+        match = FENCE_RE.match(expanded[list_indent:])
+        if fence:
+            if match and match[1].startswith(fence) and not match[2].strip(" "):
+                fence = ""
+            continue
+        if match and (match[1][0] == "~" or "`" not in match[2]):
+            fence = match[1]
+            if not list_indent or marker:
+                yield ""  # This block is outside the preceding task.
+            continue
+        yield line
+
+
 def parse_todo(text: str) -> list[Phase]:
     phases: list[Phase] = []
     current: Phase | None = None
@@ -121,7 +154,7 @@ def parse_todo(text: str) -> list[Phase]:
             phase.open += 1
         item = None
 
-    for line in text.splitlines():
+    for line in roadmap_lines(text):
         heading = PHASE_RE.match(line)
         if heading:
             finish_item()

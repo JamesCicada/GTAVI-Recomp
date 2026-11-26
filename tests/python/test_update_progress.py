@@ -99,6 +99,39 @@ class TestParseTodo(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parse("- [x] item without a phase\n")
 
+    def test_fenced_examples_do_not_change_phase_or_counts(self) -> None:
+        for marker in ("`", "~"):
+            with self.subTest(marker=marker):
+                phases = parse(
+                    "## Phase 1: Tools\n- [x] real\n\n"
+                    f" {marker * 4}example\n## Phase 42: Example\n"
+                    f"{marker * 3}\n{marker * 4} trailing text\n"
+                    "- [x] literal\n## Appendix\n"
+                    f"  {marker * 5}\n- [ ] still in Tools\n"
+                    "      needs game files\n"
+                )
+                self.assertEqual(phases, [progress.Phase(1, "Tools", done=1, blocked=1)])
+
+    def test_unclosed_fence_ends_with_its_container(self) -> None:
+        phases = parse(
+            "## Phase 1: Tools\n- [ ] first\n  ```text\n"
+            "  needs game files\n- [x] second\n"
+            "~~~\n```\n- [x] literal until end of file\n"
+        )
+        self.assertEqual(phases, [progress.Phase(1, "Tools", done=1, open=1)])
+
+    def test_inline_backticks_do_not_start_a_fence(self) -> None:
+        phases = parse("## Phase 1: Tools\n```an inline span```\n- [x] real\n")
+        self.assertEqual(phases, [progress.Phase(1, "Tools", done=1)])
+
+    def test_list_example_belongs_to_its_own_item(self) -> None:
+        phases = parse(
+            "## Phase 1: Tools\n- [ ] real\n"
+            "- ~~~\n  example\n  ~~~\n  needs game files\n"
+            "- [ ] another\n  ~~~\n  literal\n  ~~~\n  needs game files\n"
+        )
+        self.assertEqual(phases, [progress.Phase(1, "Tools", open=1, blocked=1)])
+
     def test_real_todo_parses_into_numbered_phases(self) -> None:
         phases = parse(progress.TODO.read_text(encoding="utf-8"))
         numbers = [p.number for p in phases]
