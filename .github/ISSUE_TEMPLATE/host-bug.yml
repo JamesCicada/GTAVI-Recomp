@@ -1,0 +1,46 @@
+name: Host build or tool bug
+description: Report a failure building, testing, or running this repository's host tools.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use public source or a small synthetic example that another contributor can run.
+        Keep game files, keys, webhook URLs and other secrets out of reports and logs.
+  - type: input
+    id: revision
+    attributes:
+      label: Project version or commit
+      description: If you built from a checkout, run `git rev-parse --short HEAD` at the repository root.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Build and host environment
+      description: |
+        Include the OS version and CPU architecture. For a build failure, include the compiler,
+        CMake version and generator. If the diagnostic tool built successfully, running
+        `gtavi_probe` without arguments prints the host details.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the commands, working directory and any sample input needed to see the failure.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+      description: What did you expect the command to do, and what happened?
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: Paste the first relevant error or failing test output. For CTest, rerun with `--output-on-failure`.
+      render: text
