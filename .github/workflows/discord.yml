@@ -22,5 +22,5 @@ jobs:
 
       - name: Post to Discord
         env:
-          DISCORD_WEBHOOK_URL: ${{ github.event_name == 'release' && secrets.DISCORD_WEBHOOK_ANNOUNCEMENTS || secrets.DISCORD_WEBHOOK_PROGRESS }}
+          DISCORD_WEBHOOK_URL: ${{ secrets[github.event_name == 'release' && 'DISCORD_WEBHOOK_ANNOUNCEMENTS' || 'DISCORD_WEBHOOK_PROGRESS'] }}
         run: python3 scripts/discord_notify.py --event "${{ github.event_name }}" --event-path "$GITHUB_EVENT_PATH"
