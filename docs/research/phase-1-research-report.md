@@ -206,7 +206,7 @@ Answers to the earlier open questions:
 | Input API | `libScePad` (56 / 222 functions implemented) | Reported | AnyPS5 progress scan |
 | Adaptive-trigger commands | Guest L2 and R2 requests produce separate effect blocks. The fixture checks zone strengths and the effect restored after re-enabling triggers. | Confirmed | [Guest pad trigger fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/tests/GuestPadTriggerEffects.cpp) |
 | Bluetooth DualSense haptic audio | The haptics buffer converts generated PCM to 3 kHz samples. The fixture checks the report bytes, checksum and scheduled intervals between reports. | Confirmed | [DualSense haptics fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceVideoOut/tests/DualSenseHaptics.cpp) |
-| Host backend | SDL2 game controllers, plus keyboard and mouse mapping | Reported | `docs/user/INPUT_MAPPING.md` |
+| Host backend | SDL2 game controllers, plus configurable keyboard and mouse mapping. Generated SDL events exercise the default stick bindings. | Confirmed for keyboard and mouse fixtures | [Input mapping configuration and tests](../testing-anyps5.md#keyboard-and-mouse-mapping) |
 
 At the pinned revision `1582613`, the host sends adaptive triggers through SDL
 for PS5 controllers. Alongside motor rumble, it has a separate Bluetooth HID

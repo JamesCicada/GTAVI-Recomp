@@ -221,3 +221,30 @@ ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^guest_pad_re
 
 For controller output, the [Phase 1 input findings](research/phase-1-research-report.md#7-input)
 give the two tests for adaptive-trigger commands and Bluetooth DualSense haptic reports.
+
+### Keyboard and mouse mapping
+
+The pinned runtime reads `anyps5-input.ini` beside the generated executable.
+Set `ANYPS5_INPUT_CONFIG` to select a different file. The mapping fixture
+loads these settings together and checks the F key binding for the Cross
+button, the two stick dead zones (percent) and mouse sensitivity.
+
+```ini
+Cross = KEY:F
+LeftStickDeadzone = 12
+RightStickDeadzone = 5
+MouseSensitivity = 2.5
+```
+
+A separate fixture feeds SDL events to the default mapping. Pressing W
+moves the left stick fully up, and releasing the direction keys returns it
+to center. With mouse mode enabled, a stationary mouse leaves both right-stick
+axes at 128 at polling intervals of 1, 8 and 33 ms.
+[Configuration fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceVideoOut/tests/InputMapping.cpp),
+[SDL event fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceVideoOut/tests/KeyboardMouse.cpp)
+and [upstream input guide](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/docs/user/INPUT_MAPPING.md).
+
+```console
+cmake --build build/a5 --parallel 4 --target pad_input_mapping_tests pad_keyboard_mouse_tests
+ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^(pad_input_mapping|pad_keyboard_mouse)$"
+```
