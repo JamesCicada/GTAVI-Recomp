@@ -31,6 +31,22 @@ x64 and Ubuntu 24.04 x64, the Release builds produced 413 files matching the
 413 source directories in `core/libs/prx` at `1582613`. Both hosts reported
 `413 patched libraries loaded, 0 failed`. [Ubuntu build and load test](https://github.com/RavenCurseBurg/GTAVI-Recomp/actions/runs/45692207079/job/139480310616)
 
+## Guest clocks
+
+The guest POSIX and Sce kernel interfaces each returned 1,000 consecutive
+nondecreasing monotonic readings. The fixture also checks that libc++
+`system_clock` and `steady_clock` readings fall between the corresponding
+guest clock reads on either side of the call. In the resolution fixture,
+both interfaces report 81 ns for realtime and monotonic, 1 ms for the
+virtual and profiling clocks, and 1 s for `CLOCK_SECOND`.
+[Clock readings](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/tests/GuestKernelClock.cpp)
+and [resolution checks](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/tests/GuestFreebsdClocks.cpp).
+
+```console
+cmake --build build/a5 --parallel 4 --target guest_kernel_clock_tests guest_freebsd_clocks_tests
+ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^(guest_kernel_clock|guest_freebsd_clocks)$"
+```
+
 ## Filesystem
 
 Three tests exercise file and directory operations, timestamps and vectored I/O.

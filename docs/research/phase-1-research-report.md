@@ -143,7 +143,7 @@ provide identically?
 | Virtual memory layout | Direct memory mapped by the title | Separate Windows and macOS/Linux allocators (`docs/dev/ARCHITECTURE.md`, `libkernel/DirectMemory`) | Reported |
 | Executable memory permissions | _unknown_ | _not reviewed_ | Unverified |
 | Thread priorities and affinity | `scePthread*` API | `libkernel/Pthread` on host threads | Reported |
-| Timing and clocks | _unknown_ | `libkernel`; some values fixed (`sceKernelGetCpumode` returns 0) | Reported |
+| Timing and clocks | GTA VI's timing requirements are unknown | The realtime and monotonic clocks report 81 ns resolution. The separate CPU mode query (`sceKernelGetCpumode`) returns 0 at the pin. | [Confirmed for the clock fixtures](../testing-anyps5.md#guest-clocks) |
 | Synchronisation primitives | Mutexes, semaphores, condition variables | `libkernel`; some attributes accepted and ignored (debt: silent stubs) | Reported |
 | Thread cancellation | Deferred and asynchronous cancellation | Deferred requests handled; asynchronous cases unverified (`docs/dev/ARCHITECTURE.md`) | Reported |
 
