@@ -3,7 +3,7 @@
 set(windows [[D:\Music\乗-😀]])
 set(posix "/library/音/Music/乗-😀")
 execute_process(
-  COMMAND "${PROBE}" --mount "D:/library/音" --to-posix "${windows}" --to-windows "${posix}"
+  COMMAND ${EMULATOR} "${PROBE}" --mount "D:/library/音" --to-posix "${windows}" --to-windows "${posix}"
   ENCODING UTF-8 RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE errors)
 if(NOT result STREQUAL "0")
   message(FATAL_ERROR "Unicode path translation failed (${result}): ${errors}")
@@ -15,7 +15,7 @@ foreach(line IN ITEMS "${windows} -> ${posix}\n" "${posix} -> ${windows}\n")
   endif()
 endforeach()
 
-execute_process(COMMAND "${PROBE}" --mount "D:乗-😀"
+execute_process(COMMAND ${EMULATOR} "${PROBE}" --mount "D:乗-😀"
   ENCODING UTF-8 RESULT_VARIABLE result OUTPUT_QUIET ERROR_VARIABLE errors)
 string(FIND "${errors}" "invalid mount: D:乗-😀" position)
 if(NOT result STREQUAL "2" OR position LESS 0)
