@@ -73,6 +73,33 @@ tests passed on Windows x64 with a GeForce RTX 4060 and on Ubuntu 24.04 x64
 with Mesa 25.2.8's llvmpipe software driver. Each run checked 68 RGB565 draws
 and 28 depth-remapping cases. [Ubuntu rendering test log](https://github.com/RavenCurseBurg/GTAVI-Recomp/actions/runs/45711008085/job/139545103758)
 
+## Display status on Linux
+
+Two VideoOut fixtures open a display using synthetic application metadata.
+The resolution fixture registers a 1920×1080 buffer, checks the reported full
+and pane sizes, and compares the refresh-rate codes returned by the resolution
+and output status APIs. The current-output-mode fixture checks that the pinned
+implementation returns `NO_DEVICE` on an open handle and preserves the
+caller's output buffer.
+
+With the full build configured as above, build both fixtures. On Ubuntu a
+virtual X display can run them using Xvfb, xauth and Mesa's lavapipe driver
+from the `mesa-vulkan-drivers` package.
+
+```bash
+cmake --build build/a5 --parallel 4 --target guest_video_out_resolution_status_tests guest_video_out_current_output_mode_tests
+icd=$(dpkg -L mesa-vulkan-drivers | grep -E '/lvp_icd(\.x86_64)?\.json$')
+VK_DRIVER_FILES="$icd" SDL_VIDEODRIVER=x11 ANYPS5_REQUIRE_DISPLAY=1 \
+  xvfb-run -a -s '-screen 0 1920x1080x24' ctest --test-dir build/a5 \
+  --no-tests=error --output-on-failure -R '^guest_video_out_(resolution_status|current_output_mode)$'
+```
+
+`ANYPS5_REQUIRE_DISPLAY=1` makes a display-open failure fail the test. Without
+it the fixtures can return CTest's skip code, 77. On Ubuntu 24.04 x86-64,
+both tests ran and passed with Xvfb and Mesa 25.2.8 llvmpipe
+(`GALLIUM_OVERRIDE_CPU_CAPS=avx` on the runner).
+[Display status test log](https://github.com/RavenCurseBurg/GTAVI-Recomp/actions/runs/45767909873/job/139733209089)
+
 ## Audio output
 
 Ten cases exercise default-device discovery, disconnects and retries. Seven
