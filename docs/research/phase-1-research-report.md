@@ -191,7 +191,7 @@ Answers to the earlier open questions:
 | Field | Value | Confidence | Evidence |
 | --- | --- | --- | --- |
 | Output API | `libSceAudioOut` (78 / 219 functions implemented) | Reported | AnyPS5 progress scan |
-| Channel / format expectations | _not reviewed_ | Unverified | |
+| Channel / format expectations | At the pin, legacy AudioOut queues eight-channel float PCM unchanged. AudioOut2 produces the expected stereo samples for mono, stereo, 7.1 and 7.1.4 float and signed 16-bit PCM inputs. GTA VI's input formats remain unknown. | Confirmed for the runtime fixtures | [PCM formats and channel layouts](../testing-anyps5.md#pcm-formats-and-channel-layouts) |
 | 3D audio usage | `libSceAudio3d` exists in AnyPS5 (32 functions); GTA VI's use unknown | Reported / Blocked | AnyPS5 progress scan |
 | Host backend | SDL2 audio | Reported | `libSceAudioOut/src/AudioOut.cpp` |
 

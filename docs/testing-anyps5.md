@@ -119,6 +119,21 @@ cmake --build build/a5 --parallel 4 --target audio_out_resampling_tests
 ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^audio_out_resampling$"
 ```
 
+### PCM formats and channel layouts
+
+The legacy output test sends 512 frames of eight-channel, 48 kHz float PCM
+through `sceAudioOutOutput`. It checks the frame count returned and compares
+all 16,384 queued bytes against the input. The AudioOut2 test uses SDL's disk
+driver to capture stereo output. It checks each left and right sample for
+mono, stereo, 7.1 and 7.1.4 inputs in both float and signed 16-bit PCM.
+[Legacy output fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceAudioOut/tests/AudioOutBufferSize.cpp)
+and [AudioOut2 layout fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceAudioOut/tests/AudioOut2PortLayouts.cpp).
+
+```console
+cmake --build build/a5 --parallel 4 --target audio_out_buffer_size_tests audio_out2_port_layouts_tests
+ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^(audio_out_buffer_size_pass_through|audio_out2_port_layouts)$"
+```
+
 ## Controller input
 
 These three fixtures exercise command-file input, timed button and stick events,
