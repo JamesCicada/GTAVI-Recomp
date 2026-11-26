@@ -72,6 +72,21 @@ cmake --build build/a5 --parallel 4 --target guest_file_lock_tests
 ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^guest_file_lock_"
 ```
 
+### Guest filename case
+
+The fixture creates `Data/Settings.ini` and reads its contents through
+`dAtA/SETTINGS.INI`. Mixed-case lookup also works through a guest mount
+alias. On the case-sensitive Ubuntu test filesystem, `Settings.ini` and
+`SETTINGS.INI` held different bytes. Each exact spelling read its own file,
+and looking up `settings.ini` raised an ambiguity error.
+[Pinned path fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/tests/GuestPathCase.cpp)
+and [Ubuntu filesystem check and test results](https://github.com/RavenCurseBurg/GTAVI-Recomp/actions/runs/45791835529/job/139812542754).
+
+```console
+cmake --build build/a5 --parallel 4 --target guest_path_case_tests
+ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^guest_path_case$"
+```
+
 ### Ordinary file permissions
 
 The fixture creates one ordinary file and changes its mode first by path

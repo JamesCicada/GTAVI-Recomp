@@ -163,7 +163,11 @@ only and are not used by AnyPS5.
 Open questions:
 
 - Which other mount points does GTA VI use? **Blocked.**
-- Does the guest rely on case-insensitive lookups, or on exact names? _Not reviewed._
+- Does GTA VI rely on case-insensitive lookups? Its requirements are unknown.
+  The pinned runtime resolves unique mixed-case ASCII names on Windows and
+  Linux. On a case-sensitive filesystem, an exact spelling selects its file
+  when two names differ only by case. A third spelling is ambiguous.
+  [Guest filename case fixture and results](../testing-anyps5.md#guest-filename-case).
 
 ## 5. Graphics
 
