@@ -119,6 +119,9 @@ Result<std::string> DriveMap::mount_point_for(char drive) const {
 }
 
 Result<char> DriveMap::drive_for(std::string_view raw_path) const {
+    if (contains_nul(raw_path)) {
+        return Error{ErrorCode::PathInvalid, "POSIX path must not contain a NUL byte"};
+    }
     if (raw_path.empty() || raw_path.front() != '/') {
         return Error{ErrorCode::PathInvalid, "POSIX path must be absolute"};
     }
