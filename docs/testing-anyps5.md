@@ -56,6 +56,25 @@ cmake --build build/a5 --parallel 4 --target guest_file_lock_tests
 ctest --test-dir build/a5 --output-on-failure --no-tests=error -R "^guest_file_lock_"
 ```
 
+### Ordinary file permissions
+
+The fixture creates one ordinary file and changes its mode first by path
+(`sceKernelChmod`) and then by open descriptor (`sceKernelFchmod`). Both
+calls returned success for each mode and gave the same host observations.
+
+| Requested mode (octal) | Ubuntu 24.04 `stat` permissions | Windows x64 read-only attribute |
+| --- | --- | --- |
+| `0640` | `0640` | Clear |
+| `0604` | `0604` | Clear |
+| `0400` | `0400` | Set |
+| `0600` | `0600` | Clear |
+
+On Windows the read-only attribute was set only when the requested mode
+omitted owner-write permission. Effective access for another user and Windows
+ACLs remain unmeasured.
+[Fixture source](https://github.com/RavenCurseBurg/GTAVI-Recomp/blob/b85666e31c4d3bf57c1f9dc55cfe63cde5704614/verification/regular_file_mode.cpp)
+and [Ubuntu build and results](https://github.com/RavenCurseBurg/GTAVI-Recomp/actions/runs/45775900448/job/139759363578).
+
 ## Offscreen rendering
 
 Five CTests check rendered output from synthetic draws. The RGB565 test reads

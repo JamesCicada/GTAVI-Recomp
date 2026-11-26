@@ -144,6 +144,8 @@ Implement the foundational translation layer.
 - [x] Implement directory and metadata handling. (AnyPS5:
       `libkernel/File/src/DirectoryDescriptor.cpp`)
 - [ ] Handle permissions and access control differences.
+      See the [ordinary-file mode measurements](docs/testing-anyps5.md#ordinary-file-permissions)
+      for path and descriptor calls on Windows and Linux.
 - [x] Implement file operation testing. ([AnyPS5 `libkernel` tests](docs/testing-anyps5.md#filesystem)
       cover filesystem operations, timestamps, vectored I/O, mounts and Windows file locks.)
 
