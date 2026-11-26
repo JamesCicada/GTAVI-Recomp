@@ -85,10 +85,10 @@ class Cached:
         return self.value
 
 
-def parse_progress(text: str) -> dict:
+def parse_progress(text: str) -> discord.Embed:
     import json
 
-    return json.loads(text)
+    return progress_embed(json.loads(text))
 
 
 def parse_faq(markdown: str) -> list[tuple[str, str]]:
@@ -331,11 +331,11 @@ def register_commands(bot: CalHampton) -> None:
     async def progress(interaction: discord.Interaction) -> None:
         await interaction.response.defer(thinking=True)
         try:
-            data = await bot.progress.get(bot.session)
+            embed = await bot.progress.get(bot.session)
         except Exception:
             await interaction.followup.send(f"I couldn't load the numbers right now. See {SITE_URL}")
             return
-        await interaction.followup.send(embed=progress_embed(data))
+        await interaction.followup.send(embed=embed)
 
     @tree.command(name="faq", description="Answer a frequently asked question")
     @app_commands.describe(topic="The question, or a few words from it. Leave empty to list them.")
