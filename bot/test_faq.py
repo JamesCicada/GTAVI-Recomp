@@ -78,3 +78,29 @@ class FAQTests(unittest.IsolatedAsyncioTestCase):
                     callback = self.command._params["topic"].autocomplete
                     choices = await asyncio.wait_for(callback(self.interaction, "platform"), 1)
                 self.assertEqual([choice.value for choice in choices], [self.pairs[0][0]] if previous else [])
+
+    async def test_timed_out_autocomplete_and_command_share_one_faq_request(self):
+        release = asyncio.Event()
+        self.bot.session = MagicMock(spec=cal.aiohttp.ClientSession)
+        response = MagicMock(spec=cal.aiohttp.ClientResponse)
+        self.bot.session.get.return_value.__aenter__.return_value = response
+
+        async def read():
+            await release.wait()
+            return "## FAQ\n> **Which platforms?**\n> Windows and Linux."
+
+        response.text.side_effect = read
+        callback = self.command._params["topic"].autocomplete
+        with patch.object(cal, "FAQ_AUTOCOMPLETE_TIMEOUT", 0.02):
+            self.assertEqual(await asyncio.wait_for(callback(self.interaction, "platform"), 2), [])
+        response.text.assert_awaited_once()
+
+        # The source responds when the command acknowledges the cold lookup.
+        self.interaction.response.send_message.side_effect = lambda *args, **kwargs: release.set()
+        await asyncio.wait_for(self.command.callback(self.interaction, "platforms"), 2)
+        choices = await callback(self.interaction, "platform")
+
+        self.bot.session.get.assert_called_once()
+        self.assertEqual([choice.value for choice in choices], ["Which platforms?"])
+        self.assertEqual(self.interaction.followup.send.await_args.kwargs["embed"].description,
+                         "Windows and Linux.")

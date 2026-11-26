@@ -69,6 +69,7 @@ class Cached:
         self.parse = parse
         self.value = None
         self.fetched = 0.0
+        self._refresh_task: asyncio.Task | None = None
 
     def is_fresh(self) -> bool:
         return self.value is not None and time.monotonic() - self.fetched < CACHE_SECONDS
@@ -76,6 +77,26 @@ class Cached:
     async def get(self, session: aiohttp.ClientSession):
         if self.is_fresh():
             return self.value
+        if self._refresh_task is None:
+            self._refresh_task = asyncio.create_task(self._refresh(session))
+            self._refresh_task.add_done_callback(self._refresh_finished)
+        # An autocomplete deadline only ends that caller's wait.
+        refresh = self._refresh_task
+        await asyncio.wait([refresh])
+        return refresh.result()
+
+    def _refresh_finished(self, task: asyncio.Task) -> None:
+        self._refresh_task = None
+        if not task.cancelled():
+            # A failed cold fetch is already logged, even if its last waiter left.
+            task.exception()
+
+    async def close(self) -> None:
+        if self._refresh_task is not None:
+            self._refresh_task.cancel()
+            await asyncio.gather(self._refresh_task, return_exceptions=True)
+
+    async def _refresh(self, session: aiohttp.ClientSession):
         try:
             async with session.get(self.url, timeout=aiohttp.ClientTimeout(total=15)) as response:
                 response.raise_for_status()
@@ -281,6 +302,8 @@ class CalHampton(discord.Client):
         LOG.info("Registered %d commands in server %s", len(synced), self.guild.id)
 
     async def close(self) -> None:
+        await self.faq.close()
+        await self.progress.close()
         if self.session:
             await self.session.close()
         await super().close()
