@@ -15,10 +15,12 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPO = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location(
@@ -34,6 +36,39 @@ SPEC.loader.exec_module(progress)
 
 def parse(text: str) -> list:
     return progress.parse_todo(text)
+
+
+class TestMeasureAnyPS5(unittest.TestCase):
+    def test_only_committed_tool_and_sources_are_measured(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+
+            def git(*args):
+                return subprocess.check_output(["git", "-C", tmp, *args], text=True).strip()
+
+            git("init", "--quiet")
+            (repo / "tools").mkdir()
+            tool = repo / "tools/progress.py"
+            tool.write_text(
+                "import json\nfrom pathlib import Path\n"
+                "print(json.dumps({p.name: p.read_text() for p in Path('.').glob('*.txt')}))\n",
+                encoding="utf-8",
+            )
+            data = repo / "input.txt"
+            data.write_text("committed", encoding="utf-8")
+            git("add", ".")
+            git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                "-c", "commit.gpgSign=false", "commit", "--quiet", "-m", "fixture")
+            commit = git("rev-parse", "HEAD")
+            data.write_text("staged", encoding="utf-8")
+            git("add", "input.txt")
+            tool.write_text("raise AssertionError('ran the working copy')", encoding="utf-8")
+            (repo / "extra.txt").write_text("untracked", encoding="utf-8")
+            before = git("status", "--porcelain")
+            with mock.patch.object(progress, "ANYPS5", repo):
+                self.assertEqual(progress.measure_anyps5(commit), {"input.txt": "committed"})
+            self.assertEqual(git("status", "--porcelain"), before)
+            self.assertEqual(git("show", ":input.txt"), "staged")
 
 
 class TestParseTodo(unittest.TestCase):

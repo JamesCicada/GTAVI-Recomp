@@ -16,7 +16,6 @@ import contextlib
 import importlib.util
 import io
 import json
-import os
 import sys
 import tempfile
 import unittest
@@ -252,9 +251,8 @@ class TestSendAndCli(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             event_path = Path(tmp) / "event.json"
             event_path.write_text(json.dumps(event), encoding="utf-8")
-            env = {k: v for k, v in os.environ.items() if k != "DISCORD_WEBHOOK_URL"}
             buf = io.StringIO()
-            with mock.patch.dict(os.environ, env, clear=True):
+            with mock.patch.object(notify.os, "environ", {}):
                 with mock.patch.object(notify, "send") as mock_send:
                     with contextlib.redirect_stdout(buf):
                         rc = notify.main(
