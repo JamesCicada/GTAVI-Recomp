@@ -28,6 +28,7 @@ checkout of the repository and always shows what is on main.
 
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import logging
 import os
@@ -48,6 +49,7 @@ FAQ_URL = "https://raw.githubusercontent.com/JamesCicada/GTAVI-Recomp/main/docs/
 REPO_URL = "https://github.com/JamesCicada/GTAVI-Recomp"
 UPDATES_ROLE = "Updates"
 CACHE_SECONDS = 300
+FAQ_AUTOCOMPLETE_TIMEOUT = 1.0
 COLOUR = 0x2F81F7
 JOIN_COLOUR = 0x2EA043
 LEAVE_COLOUR = 0xF85149
@@ -67,10 +69,34 @@ class Cached:
         self.parse = parse
         self.value = None
         self.fetched = 0.0
+        self._refresh_task: asyncio.Task | None = None
+
+    def is_fresh(self) -> bool:
+        return self.value is not None and time.monotonic() - self.fetched < CACHE_SECONDS
 
     async def get(self, session: aiohttp.ClientSession):
-        if self.value is not None and time.monotonic() - self.fetched < CACHE_SECONDS:
+        if self.is_fresh():
             return self.value
+        if self._refresh_task is None:
+            self._refresh_task = asyncio.create_task(self._refresh(session))
+            self._refresh_task.add_done_callback(self._refresh_finished)
+        # An autocomplete deadline only ends that caller's wait.
+        refresh = self._refresh_task
+        await asyncio.wait([refresh])
+        return refresh.result()
+
+    def _refresh_finished(self, task: asyncio.Task) -> None:
+        self._refresh_task = None
+        if not task.cancelled():
+            # A failed cold fetch is already logged, even if its last waiter left.
+            task.exception()
+
+    async def close(self) -> None:
+        if self._refresh_task is not None:
+            self._refresh_task.cancel()
+            await asyncio.gather(self._refresh_task, return_exceptions=True)
+
+    async def _refresh(self, session: aiohttp.ClientSession):
         try:
             async with session.get(self.url, timeout=aiohttp.ClientTimeout(total=15)) as response:
                 response.raise_for_status()
@@ -276,6 +302,8 @@ class CalHampton(discord.Client):
         LOG.info("Registered %d commands in server %s", len(synced), self.guild.id)
 
     async def close(self) -> None:
+        await self.faq.close()
+        await self.progress.close()
         if self.session:
             await self.session.close()
         await super().close()
@@ -341,36 +369,55 @@ def register_commands(bot: CalHampton) -> None:
     @app_commands.describe(topic="The question, or a few words from it. Leave empty to list them.")
     @app_commands.guild_only()
     async def faq(interaction: discord.Interaction, topic: str | None = None) -> None:
-        try:
-            pairs = await bot.faq.get(bot.session)
-        except Exception:
-            await interaction.response.send_message("I couldn't load the FAQ right now. Try `#faq`.", ephemeral=True)
-            return
+        loading = not bot.faq.is_fresh()
+
+        async def reply_privately(content=None, *, embed=None):
+            if loading:
+                await interaction.edit_original_response(content=content, embed=embed)
+            else:
+                await interaction.response.send_message(content=content, embed=embed, ephemeral=True)
+
+        if loading:
+            # A deferred private reply also makes its first followup private.
+            # Use a regular private message so a matching answer can be public.
+            await interaction.response.send_message("Loading the FAQ…", ephemeral=True)
+            try:
+                pairs = await bot.faq.get(bot.session)
+            except Exception:
+                await reply_privately("I couldn't load the FAQ right now. Try `#faq`.")
+                return
+        else:
+            pairs = bot.faq.value
 
         if not topic:
             listing = "\n".join(f"• {q}" for q, _ in pairs)
             embed = discord.Embed(title="FAQ", colour=COLOUR, description=listing)
             embed.set_footer(text="Use /faq topic:<question> for an answer")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await reply_privately(embed=embed)
             return
 
         found = find_faq(pairs, topic)
         if not found:
-            await interaction.response.send_message(
+            await reply_privately(
                 "I don't have an answer for that. Try `/faq` to see the questions, or ask in `#general`.",
-                ephemeral=True,
             )
             return
         question, answer = found
-        await interaction.response.send_message(
+        send = interaction.followup.send if loading else interaction.response.send_message
+        await send(
             embed=discord.Embed(title=question, description=answer, colour=COLOUR),
             allowed_mentions=discord.AllowedMentions.none(),
         )
+        if loading:
+            await interaction.delete_original_response()
 
     @faq.autocomplete("topic")
     async def faq_topics(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
         try:
-            pairs = await bot.faq.get(bot.session)
+            # Autocomplete cannot be deferred. Leave time to submit the choices.
+            pairs = await asyncio.wait_for(bot.faq.get(bot.session), timeout=FAQ_AUTOCOMPLETE_TIMEOUT)
+        except asyncio.TimeoutError:
+            pairs = bot.faq.value or []
         except Exception:
             return []
         current = current.lower()
@@ -388,6 +435,7 @@ def register_commands(bot: CalHampton) -> None:
         if role is None or not isinstance(member, discord.Member):
             await interaction.response.send_message("The Updates role doesn't exist on this server.", ephemeral=True)
             return
+        await interaction.response.defer(ephemeral=True, thinking=True)
         try:
             if role in member.roles:
                 await member.remove_roles(role, reason="/updates")
@@ -398,7 +446,7 @@ def register_commands(bot: CalHampton) -> None:
         except discord.Forbidden:
             LOG.warning("Missing permission to manage the %s role", UPDATES_ROLE)
             message = "I'm not allowed to change that role. A moderator needs to move my role above Updates."
-        await interaction.response.send_message(message, ephemeral=True)
+        await interaction.edit_original_response(content=message)
 
 
 def main() -> int:
