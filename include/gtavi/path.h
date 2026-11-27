@@ -48,7 +48,7 @@ class DriveMap {
     /// `posix_path` at a path boundary, or ErrorCode::PathUnmappedDrive.
     /// Repeated separators in `posix_path` are collapsed first, as in
     /// posix_to_windows(). A path containing a backslash is rejected with
-    /// ErrorCode::PathUnsupportedForm.
+    /// ErrorCode::PathUnsupportedForm, and an embedded NUL with ErrorCode::PathInvalid.
     Result<char> drive_for(std::string_view posix_path) const;
 
     const std::vector<DriveMapping>& mappings() const noexcept { return mappings_; }

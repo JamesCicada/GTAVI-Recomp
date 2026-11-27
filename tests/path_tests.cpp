@@ -1,6 +1,7 @@
 #include "gtavi/path.h"
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "test_framework.h"
@@ -184,6 +185,18 @@ GTAVI_TEST(drive_for_rejects_literal_backslash) {
     const auto drive = DriveMap::default_map().drive_for("/mnt/d/game\\content");
     CHECK_FALSE(drive.ok());
     CHECK_EQ(drive.error().code(), ErrorCode::PathUnsupportedForm);
+}
+
+GTAVI_TEST(drive_lookup_and_translation_reject_embedded_nul) {
+    using namespace std::string_view_literals;
+    const auto map = DriveMap::default_map();
+    constexpr auto path = "/mnt/d/data\0suffix"sv;
+    const auto drive = map.drive_for(path);
+    const auto converted = posix_to_windows(path, map);
+    CHECK_FALSE(drive.ok());
+    CHECK_EQ(drive.error().code(), ErrorCode::PathInvalid);
+    CHECK_FALSE(converted.ok());
+    CHECK_EQ(converted.error().code(), ErrorCode::PathInvalid);
 }
 
 GTAVI_TEST(duplicate_drive_keeps_the_first_mapping_in_both_directions) {
