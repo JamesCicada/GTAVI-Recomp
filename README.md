@@ -39,7 +39,7 @@ upstream library work in AnyPS5, tooling) continues.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="progress/roadmap-dark.svg">
-  <img src="progress/roadmap-light.svg" width="820" alt="Roadmap progress: 78 of 138 tasks done (57%), 15 blocked on game files">
+  <img src="progress/roadmap-light.svg" width="820" alt="Roadmap progress: 81 of 138 tasks done (59%), 15 blocked on game files">
 </picture>
 
 Details in [TODO.md](TODO.md).
@@ -123,7 +123,7 @@ This repository sits beside AnyPS5: it holds GTA VI's research, patches,
 configuration and tests, and AnyPS5 is pinned as a submodule in
 `third_party/AnyPS5`. The decision and its reasons are recorded in
 [ADR 0003](docs/adr/0003-build-on-anyps5-relinker.md); AnyPS5's own design is in
-its [architecture document](third_party/AnyPS5/docs/dev/ARCHITECTURE.md).
+its [architecture document](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/docs/dev/ARCHITECTURE.md).
 Individual decisions are recorded as ADRs under [docs/adr/](docs/adr/).
 
 ## Platform Support
@@ -131,8 +131,8 @@ Individual decisions are recorded as ADRs under [docs/adr/](docs/adr/).
 | Target | Status |
 | --- | --- |
 | Guest: GTA VI, PS5 build | Not tested: the game files cannot be researched yet |
-| AnyPS5 on Windows | [Full Release build verified](docs/build.md#building-the-pinned-anyps5-runtime-on-windows) at `1582613` with MinGW-w64 GCC 15.2.0. Five fixture tests passed. |
-| AnyPS5 on Linux | Supported upstream; not yet built by this project |
+| AnyPS5 on Windows | [Full Release build verified](docs/build.md#building-the-pinned-anyps5-runtime-on-windows) at `1582613` with MinGW-w64 GCC 15.2.0. [All 413 runtime libraries loaded](docs/testing-anyps5.md#loading-all-runtime-libraries) and 50 filesystem, rendering, audio and controller tests passed. |
+| AnyPS5 on Linux | CI builds the pinned relinker. On Ubuntu 24.04 x64, [all 413 runtime libraries loaded](docs/testing-anyps5.md#loading-all-runtime-libraries) and 43 filesystem, rendering, audio and controller tests passed at `1582613`. |
 | This repository's tooling | Builds and tests pass on Windows (MSVC) and Linux (GCC, Clang) |
 
 Nothing here is a statement that the game currently runs.
@@ -177,7 +177,7 @@ Full instructions are in [docs/build.md](docs/build.md).
 
 AnyPS5 is built separately with its own toolchain (MinGW-w64 GCC on Windows).
 Fetch it with `git submodule update --init --recursive third_party/AnyPS5` and
-follow its [build instructions](third_party/AnyPS5/docs/dev/BUILD.md).
+follow its [build instructions](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/docs/dev/BUILD.md).
 
 ## Development Roadmap
 

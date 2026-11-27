@@ -189,6 +189,9 @@ identity fields. Relinking and execution require further verification.
 
 Run the generated-fixture tests with `python -I tests/test_check_app0.py`.
 
+For the runtime libraries themselves, see [Testing pinned AnyPS5 libraries](testing-anyps5.md).
+The guide gives build targets and CTest selections for filesystem, audio and controller fixtures.
+
 ## Layout
 
 ```text

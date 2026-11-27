@@ -144,7 +144,10 @@ Implement the foundational translation layer.
 - [x] Implement directory and metadata handling. (AnyPS5:
       `libkernel/File/src/DirectoryDescriptor.cpp`)
 - [ ] Handle permissions and access control differences.
-- [ ] Implement file operation testing.
+      See the [ordinary-file mode measurements](docs/testing-anyps5.md#ordinary-file-permissions)
+      for path and descriptor calls on Windows and Linux.
+- [x] Implement file operation testing. ([AnyPS5 `libkernel` tests](docs/testing-anyps5.md#filesystem)
+      cover filesystem operations, timestamps, vectored I/O, mounts and Windows file locks.)
 
 ### Memory & Processes
 
@@ -210,7 +213,8 @@ Implement the guest's major subsystems.
 - [ ] Translate the remaining gfx1013 reference instruction forms (1,484/1,560)
       and reduce the recompiler's unsupported cases.
 - [ ] Complete the graphics driver (AnyPS5 `libSceAgcDriver`: 97/167 functions).
-- [ ] Test rendering correctness.
+- [ ] Test rendering correctness. ([Offscreen Vulkan tests](docs/testing-anyps5.md#offscreen-rendering)
+      cover RGB565 targets, color write masks and depth remapping.)
 - [ ] Investigate performance overhead.
 
 ### Audio
@@ -219,16 +223,19 @@ Implement the guest's major subsystems.
 - [x] Implement basic audio output for Windows and Linux hosts. (AnyPS5:
       `libSceAudioOut` on SDL2)
 - [ ] Complete the audio output library (78/219 functions).
-- [ ] Test device handling and format conversion.
+- [x] Test device handling and format conversion. ([AnyPS5 audio fixtures](docs/testing-anyps5.md#audio-output)
+      exercise simulated endpoints, PCM formats and Linux resampling.)
 
 ### Input
 
 - [x] Implement basic controller input. (AnyPS5: `libScePad` on SDL2, with
       keyboard and mouse mapping)
 - [ ] Complete the controller library (56/222 functions).
-- [ ] Implement haptics and adaptive triggers where feasible. (AnyPS5 has rumble;
-      adaptive triggers unverified)
-- [ ] Test input behaviour.
+- [ ] Implement haptics and adaptive triggers where feasible.
+      [Output report tests](docs/research/phase-1-research-report.md#7-input)
+      cover both features at the pin. Physical controller output remains unverified.
+- [x] Test input behaviour. ([AnyPS5 controller fixtures](docs/testing-anyps5.md#controller-input)
+      exercise command files, scripted input and recorded controller state.)
 
 ## Phase 7: Integration & Compatibility
 

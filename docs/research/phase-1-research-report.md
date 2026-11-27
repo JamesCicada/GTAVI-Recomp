@@ -2,7 +2,7 @@
 
 - **Status:** In progress — filled from public sources and AnyPS5; GTA VI-specific findings blocked
 - **Owner:** unassigned
-- **Last updated:** 2026-11-21
+- **Last updated:** 2026-11-26
 
 This document is the deliverable for Phase 1 of `TODO.md`. It records what has
 been *observed* about the PS5 build and the host platforms, not what is assumed.
@@ -143,9 +143,9 @@ provide identically?
 | Virtual memory layout | Direct memory mapped by the title | Separate Windows and macOS/Linux allocators (`docs/dev/ARCHITECTURE.md`, `libkernel/DirectMemory`) | Reported |
 | Executable memory permissions | _unknown_ | _not reviewed_ | Unverified |
 | Thread priorities and affinity | `scePthread*` API | `libkernel/Pthread` on host threads | Reported |
-| Timing and clocks | _unknown_ | `libkernel`; some values fixed (`sceKernelGetCpumode` returns 0) | Reported |
+| Timing and clocks | GTA VI's timing requirements are unknown | The realtime and monotonic clocks report 81 ns resolution. The separate CPU mode query (`sceKernelGetCpumode`) returns 0 at the pin. | [Confirmed for the clock fixtures](../testing-anyps5.md#guest-clocks) |
 | Synchronisation primitives | Mutexes, semaphores, condition variables | `libkernel`; some attributes accepted and ignored (debt: silent stubs) | Reported |
-| Thread cancellation | Deferred and asynchronous cancellation | Deferred requests handled; asynchronous cases unverified (`docs/dev/ARCHITECTURE.md`) | Reported |
+| Thread cancellation | GTA VI's cancellation points are unknown | A blocked guest POSIX nanosleep is cancellable. A pending request in asynchronous mode takes effect when the worker re-enables cancellation. | [Confirmed for the cancellation fixtures](../testing-anyps5.md#thread-cancellation) |
 
 ## 4. Filesystem and mount points
 
@@ -163,7 +163,11 @@ only and are not used by AnyPS5.
 Open questions:
 
 - Which other mount points does GTA VI use? **Blocked.**
-- Does the guest rely on case-insensitive lookups, or on exact names? _Not reviewed._
+- Does GTA VI rely on case-insensitive lookups? Its requirements are unknown.
+  The pinned runtime resolves unique mixed-case ASCII names on Windows and
+  Linux. On a case-sensitive filesystem, an exact spelling selects its file
+  when two names differ only by case. A third spelling is ambiguous.
+  [Guest filename case fixture and results](../testing-anyps5.md#guest-filename-case).
 
 ## 5. Graphics
 
@@ -175,7 +179,7 @@ translation target?
 | API family | AGC (`libSceAgc`, `libSceAgcDriver`) | Reported | `core/libs/prx/libSceAgc*` |
 | Command buffer format | APR and AMM command buffers | Reported | `docs/dev/ARCHITECTURE.md`, "APR and AMM command buffers" |
 | Shader format | AMD RDNA-family GPU machine code; AnyPS5 tracks RDNA 2 and gfx1013 references | Reported | `docs/dev/PROGRESS.md` |
-| Synchronisation model | _not reviewed_ | Unverified | |
+| Synchronisation model | The pinned Vulkan recorder can omit a barrier already covered by an earlier one. The tested cases retain image layout transitions, queue-family ownership transfers and barriers for host reads. | Confirmed for the recorder's barrier decisions | [Vulkan barrier batching](../testing-anyps5.md#vulkan-barrier-batching) |
 | Translation target | Vulkan; shaders recompiled to SPIR-V | Reported | `libSceAgcDriver/Execution/src/VulkanDevice.cpp`, `core/shader/recompiler` |
 
 Answers to the earlier open questions:
@@ -191,8 +195,8 @@ Answers to the earlier open questions:
 | Field | Value | Confidence | Evidence |
 | --- | --- | --- | --- |
 | Output API | `libSceAudioOut` (78 / 219 functions implemented) | Reported | AnyPS5 progress scan |
-| Channel / format expectations | _not reviewed_ | Unverified | |
-| 3D audio usage | `libSceAudio3d` exists in AnyPS5 (32 functions); GTA VI's use unknown | Reported / Blocked | AnyPS5 progress scan |
+| Channel / format expectations | At the pin, legacy AudioOut queues eight-channel float PCM unchanged. AudioOut2 produces the expected stereo samples for mono, stereo, 7.1 and 7.1.4 float and signed 16-bit PCM inputs. GTA VI's input formats remain unknown. | Confirmed for the runtime fixtures | [PCM formats and channel layouts](../testing-anyps5.md#pcm-formats-and-channel-layouts) |
+| 3D audio usage | The pinned scan counts 32 functions in `libSceAudio3d`. The mixer converts generated PCM to stereo and the guest port queues frames. GTA VI's use is unknown. | Confirmed for the fixtures / Blocked for the title | [Audio3d mixer and port tests](../testing-anyps5.md#audio3d-mixing-and-queuing) |
 | Host backend | SDL2 audio | Reported | `libSceAudioOut/src/AudioOut.cpp` |
 
 ## 7. Input
@@ -200,8 +204,25 @@ Answers to the earlier open questions:
 | Field | Value | Confidence | Evidence |
 | --- | --- | --- | --- |
 | Input API | `libScePad` (56 / 222 functions implemented) | Reported | AnyPS5 progress scan |
-| Device features used | Rumble supported; DualSense haptic audio approximated as rumble; adaptive triggers unverified | Reported | `TechnicalDebt.md`, `libScePad` sources |
-| Host backend | SDL2 game controllers, plus keyboard and mouse mapping | Reported | `docs/user/INPUT_MAPPING.md` |
+| Adaptive-trigger commands | Guest L2 and R2 requests produce separate effect blocks. The fixture checks zone strengths and the effect restored after re-enabling triggers. | Confirmed | [Guest pad trigger fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/tests/GuestPadTriggerEffects.cpp) |
+| Bluetooth DualSense haptic audio | The haptics buffer converts generated PCM to 3 kHz samples. The fixture checks the report bytes, checksum and scheduled intervals between reports. | Confirmed | [DualSense haptics fixture](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceVideoOut/tests/DualSenseHaptics.cpp) |
+| Host backend | SDL2 game controllers, plus configurable keyboard and mouse mapping. Generated SDL events exercise the default stick bindings. | Confirmed for keyboard and mouse fixtures | [Input mapping configuration and tests](../testing-anyps5.md#keyboard-and-mouse-mapping) |
+
+At the pinned revision `1582613`, the host sends adaptive triggers through SDL
+for PS5 controllers. Alongside motor rumble, it has a separate Bluetooth HID
+output path for DualSense haptic audio. [Trigger and rumble dispatch](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceVideoOut/src/PadInput.cpp#L329-L398) · [Bluetooth haptics output](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/core/libs/prx/libSceVideoOut/src/PadInput.cpp#L225-L269)
+
+From the GTAVI-Recomp root, configure `third_party/AnyPS5` in `build/a5` with
+`BUILD_TESTING=ON`, then build and run the two fixtures. [Pinned build requirements](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/docs/dev/BUILD.md#requirements)
+
+```console
+cmake --build build/a5 --parallel 4 --target guest_pad_trigger_effects_tests dualsense_haptics_tests
+ctest --test-dir build/a5 --no-tests=error --output-on-failure -R "^(guest_pad_trigger_effects|dualsense_haptics)$"
+```
+
+Both fixtures passed on Windows x64 and Ubuntu 24.04 x64 using in-memory data.
+Physical trigger resistance, vibration fidelity and GTA VI's use of either
+feature remain unverified by this project. [Ubuntu fixture output](https://github.com/RavenCurseBurg/GTAVI-Recomp/actions/runs/45725866198/job/139595455924)
 
 ## 8. Networking and online services
 
