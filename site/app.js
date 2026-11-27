@@ -4,7 +4,12 @@
 const fmt = new Intl.NumberFormat("en-US");
 
 function pct(part, whole) {
-  return whole ? Math.round((100 * part) / whole) : 0;
+  if (!whole) return 0;
+  const value = (100 * part) / whole;
+  const lower = Math.floor(value);
+  // Match Python's round() in the progress generator at an exact half percent.
+  if (value - lower === 0.5 && lower % 2 === 0) return lower;
+  return Math.round(value);
 }
 
 function el(tag, className, text) {
