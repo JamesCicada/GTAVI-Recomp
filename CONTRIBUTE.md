@@ -169,6 +169,9 @@ Clearly distinguish confirmed findings from hypotheses.
 
 ## Bug Reports
 
+For failures building or running the host tools, open a
+[host bug report](https://github.com/JamesCicada/GTAVI-Recomp/issues/new?template=host-bug.yml).
+
 When reporting a bug, include:
 
 - Operating system and version.
