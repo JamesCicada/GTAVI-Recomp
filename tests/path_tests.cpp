@@ -122,6 +122,18 @@ GTAVI_TEST(unmapped_drive_is_rejected) {
 
 // --- custom drive maps ------------------------------------------------------
 
+GTAVI_TEST(default_map_has_a_mount_for_every_drive_letter) {
+    const auto map = DriveMap::default_map();
+    CHECK_EQ(map.mappings().size(), std::size_t{26});
+    for (char drive = 'A'; drive <= 'Z'; ++drive) {
+        const auto mount = map.mount_point_for(drive);
+        CHECK_TRUE(mount.ok());
+        if (mount.ok()) {
+            CHECK_EQ(mount.value(), std::string{"/mnt/"} + static_cast<char>('a' + drive - 'A'));
+        }
+    }
+}
+
 GTAVI_TEST(custom_mapping_is_used) {
     const DriveMap map = DriveMap::with_mappings({DriveMapping{'D', "/games"}});
     const auto result = windows_to_posix("D:\\GTA", map);

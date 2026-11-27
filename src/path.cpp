@@ -56,6 +56,22 @@ std::string normalize_separators(std::string_view path) {
     return out;
 }
 
+const DriveMapping* find_mount(const DriveMap& map, std::string_view normalized_path) {
+    const DriveMapping* best = nullptr;
+    for (const auto& mapping : map.mappings()) {
+        const auto& mount = mapping.mount_point;
+        if (!normalized_path.starts_with(mount)) {
+            continue;
+        }
+        const bool at_boundary = mount == "/" || normalized_path.size() == mount.size() ||
+                                 normalized_path[mount.size()] == '/';
+        if (at_boundary && (best == nullptr || mount.size() > best->mount_point.size())) {
+            best = &mapping;
+        }
+    }
+    return best;
+}
+
 }  // namespace
 
 bool has_drive_designator(std::string_view windows_path) noexcept {
@@ -63,14 +79,14 @@ bool has_drive_designator(std::string_view windows_path) noexcept {
 }
 
 DriveMap DriveMap::default_map() {
-    std::vector<DriveMapping> mappings;
-    mappings.reserve(26);
+    DriveMap map;
+    map.mappings_.reserve(26);
     for (char letter = 'A'; letter <= 'Z'; ++letter) {
         std::string mount_point = "/mnt/";
         mount_point.push_back(static_cast<char>(letter - 'A' + 'a'));
-        mappings.push_back(DriveMapping{letter, std::move(mount_point)});
+        map.mappings_.push_back(DriveMapping{letter, std::move(mount_point)});
     }
-    return with_mappings(std::move(mappings));
+    return map;
 }
 
 DriveMap DriveMap::with_mappings(std::vector<DriveMapping> mappings) {
@@ -131,35 +147,11 @@ Result<char> DriveMap::drive_for(std::string_view raw_path) const {
         return Error{ErrorCode::PathUnsupportedForm, "POSIX path contains a literal backslash: " + quoted(raw_path)};
     }
 
-    // Mount points are stored normalised, so compare against a normalised path.
-    const std::string normalized = normalize_separators(raw_path);
-    const std::string_view posix_path = normalized;
-
-    const DriveMapping* best = nullptr;
-    for (const auto& mapping : mappings_) {
-        if (posix_path.size() < mapping.mount_point.size()) {
-            continue;
-        }
-        if (posix_path.compare(0, mapping.mount_point.size(), mapping.mount_point) != 0) {
-            continue;
-        }
-
-        const bool at_boundary =
-            mapping.mount_point == "/" || posix_path.size() == mapping.mount_point.size() ||
-            posix_path[mapping.mount_point.size()] == '/';
-        if (!at_boundary) {
-            continue;
-        }
-
-        if (best == nullptr || mapping.mount_point.size() > best->mount_point.size()) {
-            best = &mapping;
-        }
-    }
-
-    if (best == nullptr) {
+    const DriveMapping* mapping = find_mount(*this, normalize_separators(raw_path));
+    if (mapping == nullptr) {
         return Error{ErrorCode::PathUnmappedDrive, "no mount point matches " + quoted(raw_path)};
     }
-    return best->drive;
+    return mapping->drive;
 }
 
 Result<std::string> windows_to_posix(std::string_view windows_path, const DriveMap& map) {
@@ -225,22 +217,17 @@ Result<std::string> posix_to_windows(std::string_view posix_path, const DriveMap
     }
 
     const std::string normalized = normalize_separators(posix_path);
-    auto drive = map.drive_for(normalized);
-    if (!drive) {
-        return drive.error();
+    const DriveMapping* mapping = find_mount(map, normalized);
+    if (mapping == nullptr) {
+        return Error{ErrorCode::PathUnmappedDrive, "no mount point matches " + quoted(normalized)};
     }
 
-    auto mount_point = map.mount_point_for(drive.value());
-    if (!mount_point) {
-        return mount_point.error();
-    }
-
-    const std::string& mount = mount_point.value();
+    const std::string& mount = mapping->mount_point;
     const std::string_view remainder = std::string_view{normalized}.substr(mount.size());
 
     std::string out;
     out.reserve(remainder.size() + 2);
-    out.push_back(drive.value());
+    out.push_back(mapping->drive);
     out.push_back(':');
 
     if (remainder.empty() || remainder == "/") {
