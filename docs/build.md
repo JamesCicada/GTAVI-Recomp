@@ -72,11 +72,35 @@ untested.
 
 ## Linux
 
+Build the project's host tools from the repository root:
+
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```
+
+### Building the pinned AnyPS5 relinker
+
+From the GTAVI-Recomp root, fetch the AnyPS5 submodule and use a separate
+build directory. This mode needs a C++20 compiler, CMake, Ninja and Python 3.9
+or newer for the four tests below. It skips the runtime libraries, graphics
+dependencies and nested submodules. Fedora's GCC packages also need
+`glibc-static` and `libstdc++-static` for the default static link.
+
+```bash
+git submodule update --init third_party/AnyPS5
+cmake -S third_party/AnyPS5 -B build/relinker -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DANYPS5_RELINKER_ONLY=ON -DBUILD_TESTING=ON
+cmake --build build/relinker --parallel 4 --target relinker file_identity_tests relinker_conversion_tests
+./build/relinker/core/relinker/relinker --help
+ctest --test-dir build/relinker --output-on-failure --no-tests=error \
+  -R '^(cli_help|file_identity|input_magic|relinker_conversion)$'
+```
+
+The four checks exercise the CLI, file identity, input format detection and
+conversion using generated fixtures. For the full relinker test suite, build
+the default target and run CTest without the filter. [Pinned AnyPS5 build guide](https://github.com/boykopovar/AnyPS5/blob/15826135019b8c7de27f42661a850a1dd9750932/docs/dev/BUILD.md#relinker-only)
 
 ## Presets
 
