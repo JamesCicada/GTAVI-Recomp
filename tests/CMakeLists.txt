@@ -11,6 +11,12 @@ target_link_libraries(gtavi_tests PRIVATE gtavi::core gtavi_warnings)
 
 add_test(NAME gtavi_tests COMMAND gtavi_tests)
 
+if(TARGET gtavi_probe AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux"
+   AND NOT CMAKE_CROSSCOMPILING AND EXISTS "/dev/full")
+  add_test(NAME gtavi_probe_output_error
+    COMMAND ${CMAKE_COMMAND} -DPROBE=$<TARGET_FILE:gtavi_probe> -P ${CMAKE_CURRENT_SOURCE_DIR}/probe_output_error.cmake)
+endif()
+
 if(TARGET gtavi_probe)
   set(probe_args "-DPROBE=$<TARGET_FILE:gtavi_probe>")
   if(CMAKE_CROSSCOMPILING)

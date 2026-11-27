@@ -32,9 +32,9 @@ void print_usage() {
         "  --mount <drive:/root> override a drive's mount for all translations\n"
         "  -h, --help           show this message\n"
         "\n"
-        "Exit status: 0 on success, 2 on a usage error. When paths are given, 1 means\n"
-        "a translation failed; a host the layer cannot describe only logs a warning.\n"
-        "Without paths, 1 means the host query failed.\n",
+        "Exit status: 0 on success, 2 on a usage error. A failed translation or\n"
+        "output write returns 1. A failed host query returns 1 when no translations\n"
+        "were requested and logs a warning otherwise.\n",
         stderr);
 }
 
@@ -68,9 +68,7 @@ struct Translation {
     std::string_view path;
 };
 
-}  // namespace
-
-int run_probe(std::span<const std::string> arguments, ProbeWriter write_text) {
+int run_command(std::span<const std::string> arguments, ProbeWriter write_text) {
     gtavi::Logger& logger = gtavi::Logger::default_logger();
     logger.add_sink([write_text](const gtavi::LogRecord& record) {
         std::ostringstream message;
@@ -141,4 +139,15 @@ int run_probe(std::span<const std::string> arguments, ProbeWriter write_text) {
     }
 
     return exit_code;
+}
+
+}  // namespace
+
+int run_probe(std::span<const std::string> arguments, ProbeWriter write_text) {
+    const int status = run_command(arguments, write_text);
+    if (std::fflush(stdout) != 0 || std::ferror(stdout) != 0) {
+        std::fputs("could not write probe output\n", stderr);
+        return status == 0 ? 1 : status;
+    }
+    return status;
 }
